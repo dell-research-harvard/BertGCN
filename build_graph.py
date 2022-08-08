@@ -60,7 +60,7 @@ f.close()
 
 assert len(doc_content_list) == len(doc_name_list)
 
-# Shuffle training data
+# Shuffle IDs and save
 train_ids = []
 for train_name in doc_train_list:
     train_id = doc_name_list.index(train_name)
@@ -70,27 +70,24 @@ random.shuffle(train_ids)
 # # partial labeled data
 # #train_ids = train_ids[:int(0.2 * len(train_ids))]
 
-# Save train IDs
 train_ids_str = '\n'.join(str(index) for index in train_ids)
 f = open('data/' + dataset + '.train.index', 'w')
 f.write(train_ids_str)
 f.close()
 
-# test_ids = []
-# for test_name in doc_test_list:
-#     test_id = doc_name_list.index(test_name)
-#     test_ids.append(test_id)
-# print(test_ids)
-# random.shuffle(test_ids)
-#
-# test_ids_str = '\n'.join(str(index) for index in test_ids)
-# f = open('data/' + dataset + '.test.index', 'w')
-# f.write(test_ids_str)
-# f.close()
-#
-# ids = train_ids + test_ids
-# print(ids)
-# print(len(ids))
+test_ids = []
+for test_name in doc_test_list:
+    test_id = doc_name_list.index(test_name)
+    test_ids.append(test_id)
+random.shuffle(test_ids)
+
+test_ids_str = '\n'.join(str(index) for index in test_ids)
+f = open('data/' + dataset + '.test.index', 'w')
+f.write(test_ids_str)
+f.close()
+
+ids = train_ids + test_ids
+print(len(ids))
 #
 # shuffle_doc_name_list = []
 # shuffle_doc_words_list = []
