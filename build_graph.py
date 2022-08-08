@@ -60,7 +60,7 @@ f.close()
 
 assert len(doc_content_list) == len(doc_name_list)
 
-# Shuffle IDs and save
+# Shuffle data
 train_ids = []
 for train_name in doc_train_list:
     train_id = doc_name_list.index(train_name)
@@ -87,24 +87,23 @@ f.write(test_ids_str)
 f.close()
 
 ids = train_ids + test_ids
-print(len(ids))
-#
-# shuffle_doc_name_list = []
-# shuffle_doc_words_list = []
-# for id in ids:
-#     shuffle_doc_name_list.append(doc_name_list[int(id)])
-#     shuffle_doc_words_list.append(doc_content_list[int(id)])
-# shuffle_doc_name_str = '\n'.join(shuffle_doc_name_list)
-# shuffle_doc_words_str = '\n'.join(shuffle_doc_words_list)
-#
-# f = open('data/' + dataset + '_shuffle.txt', 'w')
-# f.write(shuffle_doc_name_str)
-# f.close()
-#
-# f = open('data/corpus/' + dataset + '_shuffle.txt', 'w')
-# f.write(shuffle_doc_words_str)
-# f.close()
-#
+
+shuffle_doc_name_list = []
+shuffle_doc_words_list = []
+for id in ids:
+    shuffle_doc_name_list.append(doc_name_list[int(id)])
+    shuffle_doc_words_list.append(doc_content_list[int(id)])
+shuffle_doc_name_str = '\n'.join(shuffle_doc_name_list)
+shuffle_doc_words_str = '\n'.join(shuffle_doc_words_list)
+
+f = open('data/' + dataset + '_shuffle.txt', 'w')
+f.write(shuffle_doc_name_str)
+f.close()
+
+f = open('data/corpus/' + dataset + '_shuffle.txt', 'w')
+f.write(shuffle_doc_words_str)
+f.close()
+
 # # build vocab
 # word_freq = {}
 # word_set = set()
