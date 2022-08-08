@@ -31,7 +31,7 @@ if dataset not in datasets:
 word_embeddings_dim = 300
 word_vector_map = {}
 
-# shuffling
+# Pull text ids, split (test/train) and label
 doc_name_list = []
 doc_train_list = []
 doc_test_list = []
@@ -39,40 +39,43 @@ doc_test_list = []
 f = open('data/' + dataset + '.txt', 'r')
 lines = f.readlines()
 for line in lines:
-    print(line.strip())
     doc_name_list.append(line.strip())
     temp = line.split("\t")
-    if temp[1].find('test') != -1:
+    if temp[1].find('test') != -1:      # find returns -1 if not found
         doc_test_list.append(line.strip())
     elif temp[1].find('train') != -1:
         doc_train_list.append(line.strip())
 f.close()
-# # print(doc_train_list)
-# # print(doc_test_list)
-#
-# doc_content_list = []
-# f = open('data/corpus/' + dataset + '.clean.txt', 'r')
-# lines = f.readlines()
-# for line in lines:
-#     doc_content_list.append(line.strip())
-# f.close()
-# # print(doc_content_list)
-#
-# train_ids = []
-# for train_name in doc_train_list:
-#     train_id = doc_name_list.index(train_name)
-#     train_ids.append(train_id)
-# print(train_ids)
-# random.shuffle(train_ids)
-#
+
+print(f'{len(doc_train_list)} training examples')
+print(f'{len(doc_test_list)} test examples')
+
+# Pull texts
+doc_content_list = []
+f = open('data/corpus/' + dataset + '.clean.txt', 'r')
+lines = f.readlines()
+for line in lines:
+    doc_content_list.append(line.strip())
+f.close()
+
+assert len(doc_content_list) == len(doc_name_list)
+
+# Shuffle training data
+train_ids = []
+for train_name in doc_train_list:
+    train_id = doc_name_list.index(train_name)
+    train_ids.append(train_id)
+random.shuffle(train_ids)
+
 # # partial labeled data
 # #train_ids = train_ids[:int(0.2 * len(train_ids))]
-#
-# train_ids_str = '\n'.join(str(index) for index in train_ids)
-# f = open('data/' + dataset + '.train.index', 'w')
-# f.write(train_ids_str)
-# f.close()
-#
+
+# Save train IDs
+train_ids_str = '\n'.join(str(index) for index in train_ids)
+f = open('data/' + dataset + '.train.index', 'w')
+f.write(train_ids_str)
+f.close()
+
 # test_ids = []
 # for test_name in doc_test_list:
 #     test_id = doc_name_list.index(test_name)
