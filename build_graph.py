@@ -52,7 +52,7 @@ print(f'{len(doc_test_list)} test examples')
 
 # Pull texts
 doc_content_list = []
-f = open('data/corpus/' + dataset + '.clean.txt', 'r')
+f = open('data/corpus/' + dataset + '.clean.txt', 'r')    # This is the version with stop words removed
 lines = f.readlines()
 for line in lines:
     doc_content_list.append(line.strip())
@@ -104,38 +104,42 @@ f = open('data/corpus/' + dataset + '_shuffle.txt', 'w')
 f.write(shuffle_doc_words_str)
 f.close()
 
-# # build vocab
-# word_freq = {}
-# word_set = set()
-# for doc_words in shuffle_doc_words_list:
-#     words = doc_words.split()
-#     for word in words:
-#         word_set.add(word)
-#         if word in word_freq:
-#             word_freq[word] += 1
-#         else:
-#             word_freq[word] = 1
-#
-# vocab = list(word_set)
-# vocab_size = len(vocab)
-#
-# word_doc_list = {}
-#
-# for i in range(len(shuffle_doc_words_list)):
-#     doc_words = shuffle_doc_words_list[i]
-#     words = doc_words.split()
-#     appeared = set()
-#     for word in words:
-#         if word in appeared:
-#             continue
-#         if word in word_doc_list:
-#             doc_list = word_doc_list[word]
-#             doc_list.append(i)
-#             word_doc_list[word] = doc_list
-#         else:
-#             word_doc_list[word] = [i]
-#         appeared.add(word)
-#
+# Build vocab
+word_freq = {}
+word_set = set()
+for doc_words in shuffle_doc_words_list:
+    words = doc_words.split()
+    for word in words:
+        word_set.add(word)
+        if word in word_freq:
+            word_freq[word] += 1
+        else:
+            word_freq[word] = 1
+
+vocab = list(word_set)
+vocab_size = len(vocab)
+
+print(f"Vocabulary size: {vocab_size}")
+
+word_doc_list = {}
+
+for i in range(len(shuffle_doc_words_list)):
+    doc_words = shuffle_doc_words_list[i]
+    words = doc_words.split()
+    appeared = set()
+    for word in words:
+        if word in appeared:
+            continue
+        if word in word_doc_list:
+            doc_list = word_doc_list[word]
+            doc_list.append(i)
+            word_doc_list[word] = doc_list
+        else:
+            word_doc_list[word] = [i]
+        appeared.add(word)
+
+print(json.dumps(word_doc_list, indent=4))
+
 # word_doc_freq = {}
 # for word, doc_list in word_doc_list.items():
 #     word_doc_freq[word] = len(doc_list)
