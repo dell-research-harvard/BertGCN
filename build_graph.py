@@ -29,8 +29,9 @@ if dataset not in datasets:
 #_, embd, word_vector_map = loadWord2Vec(word_vector_file)
 # word_embeddings_dim = len(embd[0])
 
+# Parameters
 word_embeddings_dim = 300
-word_vector_map = {}
+window_size = 20   # size of windows in which to look for co-occurance of words
 
 # Pull text ids, split (test/train) and label
 doc_name_list = []
@@ -209,6 +210,7 @@ word_embeddings_dim = len(embd[0])
 '''
 Word definitions end
 '''
+word_vector_map = {} # Todo: might not need this if get rid of all the redundant code
 
 # Create list of unique labels
 label_set = set()
@@ -373,28 +375,25 @@ for i in range(vocab_size):
 
 ally = np.array(ally)
 
-print(x.shape, y.shape, tx.shape, ty.shape, allx.shape, ally.shape)
-#
-# '''
-# Doc word heterogeneous graph
-# '''
-#
-# # word co-occurence with context windows
-# window_size = 20
-# windows = []
-#
-# for doc_words in shuffle_doc_words_list:
-#     words = doc_words.split()
-#     length = len(words)
-#     if length <= window_size:
-#         windows.append(words)
-#     else:
-#         # print(length, length - window_size + 1)
-#         for j in range(length - window_size + 1):
-#             window = words[j: j + window_size]
-#             windows.append(window)
-#             # print(window)
-#
+print("Featurized matrix sizes:", x.shape, y.shape, tx.shape, ty.shape, allx.shape, ally.shape)
+
+'''
+Doc word heterogeneous graph
+'''
+
+# word co-occurence with context windows
+windows = []
+for doc_words in shuffle_doc_words_list:
+    words = doc_words.split()
+    length = len(words)
+    if length <= window_size:
+        windows.append(words)
+    else:
+        # print(length, length - window_size + 1)
+        for j in range(length - window_size + 1):
+            window = words[j: j + window_size]
+            windows.append(window)
+            print(window)
 #
 # word_window_freq = {}
 # for window in windows:
