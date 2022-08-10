@@ -235,7 +235,8 @@ f = open('data/' + dataset + '.real_train.name', 'w')
 f.write(real_train_doc_names_str)
 f.close()
 
-# Create feature vectors for training docs. At the moment, we don't have any
+# Todo: replace with a one line (zeros) -> matrix of real_train_size word_embeddings_dim - can replace up to 264
+# Create feature matrix, x,  for training docs. At the moment, we don't have any
 # features so they're all intialised as zero
 row_x = []
 col_x = []
@@ -260,19 +261,18 @@ for i in range(real_train_size):
 x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(
     real_train_size, word_embeddings_dim))
 
-print(x.toarray())
-
-# y = []
-# for i in range(real_train_size):
-#     doc_meta = shuffle_doc_name_list[i]
-#     temp = doc_meta.split('\t')
-#     label = temp[2]
-#     one_hot = [0 for l in range(len(label_list))]
-#     label_index = label_list.index(label)
-#     one_hot[label_index] = 1
-#     y.append(one_hot)
-# y = np.array(y)
-# print(y)
+y = []
+for i in range(real_train_size):
+    doc_meta = shuffle_doc_name_list[i]
+    temp = doc_meta.split('\t')
+    label = temp[2]
+    one_hot = [0 for l in range(len(label_list))]
+    label_index = label_list.index(label)
+    one_hot[label_index] = 1
+    y.append(one_hot)
+y = np.array(y)
+print(len(y))
+print(len(y)[0])
 #
 # # tx: feature vectors of test docs, no initial features
 # test_size = len(test_ids)
