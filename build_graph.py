@@ -23,7 +23,7 @@ dataset = sys.argv[1]
 if dataset not in datasets:
 	sys.exit("wrong dataset name")
 
-# Read Word Vectors
+# Read Word Vectors # Todo: remove
 # word_vector_file = 'data/glove.6B/glove.6B.300d.txt'
 # word_vector_file = 'data/corpus/' + dataset + '_word_vectors.txt'
 #_, embd, word_vector_map = loadWord2Vec(word_vector_file)
@@ -154,8 +154,8 @@ f.write(vocab_str)
 f.close()
 
 '''
-Word definitions begin
-'''
+Word definitions begin 
+''' # Todo: remove
 '''
 definitions = []
 
@@ -235,6 +235,8 @@ f = open('data/' + dataset + '.real_train.name', 'w')
 f.write(real_train_doc_names_str)
 f.close()
 
+# Create feature vectors for training docs. At the moment, we don't have any
+# features so they're all intialised as zero
 row_x = []
 col_x = []
 data_x = []
@@ -243,18 +245,18 @@ for i in range(real_train_size):
     doc_words = shuffle_doc_words_list[i]
     words = doc_words.split()
     doc_len = len(words)
-    for word in words:
-        if word in word_vector_map:
+    for word in words:  # Todo: remove
+        if word in word_vector_map:  # This does not do anything because word_vector_map is an empty dict
             word_vector = word_vector_map[word]
-            print(doc_vec)
-            print(np.array(word_vector))
             doc_vec = doc_vec + np.array(word_vector)
 
-    # for j in range(word_embeddings_dim):
-    #     row_x.append(i)
-    #     col_x.append(j)
-    #     # np.random.uniform(-0.25, 0.25)
-    #     data_x.append(doc_vec[j] / doc_len)  # doc_vec[j]/ doc_len
+    for j in range(word_embeddings_dim):
+        row_x.append(i)
+        col_x.append(j)
+        # np.random.uniform(-0.25, 0.25)
+        data_x.append(doc_vec[j] / doc_len)  # doc_vec[j]/ doc_len
+
+print(row_x)
 
 # # x = sp.csr_matrix((real_train_size, word_embeddings_dim), dtype=np.float32)
 # x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(
