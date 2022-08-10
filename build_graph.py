@@ -318,6 +318,7 @@ ty = np.array(ty)
 word_vectors = np.random.uniform(-0.01, 0.01,
                                  (vocab_size, word_embeddings_dim))
 
+# Todo: This does nothing - delete
 for i in range(len(vocab)):
     word = vocab[i]
     if word in word_vector_map:
@@ -325,49 +326,52 @@ for i in range(len(vocab)):
         vector = word_vector_map[word]
         word_vectors[i] = vector
 
-# row_allx = []
-# col_allx = []
-# data_allx = []
-#
-# for i in range(train_size):
-#     doc_vec = np.array([0.0 for k in range(word_embeddings_dim)])
-#     doc_words = shuffle_doc_words_list[i]
-#     words = doc_words.split()
-#     doc_len = len(words)
-#     for word in words:
-#         if word in word_vector_map:
-#             word_vector = word_vector_map[word]
-#             doc_vec = doc_vec + np.array(word_vector)
-#
-#     for j in range(word_embeddings_dim):
-#         row_allx.append(int(i))
-#         col_allx.append(j)
-#         # np.random.uniform(-0.25, 0.25)
-#         data_allx.append(doc_vec[j] / doc_len)  # doc_vec[j]/doc_len
-# for i in range(vocab_size):
-#     for j in range(word_embeddings_dim):
-#         row_allx.append(int(i + train_size))
-#         col_allx.append(j)
-#         data_allx.append(word_vectors.item((i, j)))
-#
-#
-# row_allx = np.array(row_allx)
-# col_allx = np.array(col_allx)
-# data_allx = np.array(data_allx)
-#
-# allx = sp.csr_matrix(
-#     (data_allx, (row_allx, col_allx)), shape=(train_size + vocab_size, word_embeddings_dim))
-#
-# ally = []
-# for i in range(train_size):
-#     doc_meta = shuffle_doc_name_list[i]
-#     temp = doc_meta.split('\t')
-#     label = temp[2]
-#     one_hot = [0 for l in range(len(label_list))]
-#     label_index = label_list.index(label)
-#     one_hot[label_index] = 1
-#     ally.append(one_hot)
-#
+row_allx = []
+col_allx = []
+data_allx = []
+for i in range(train_size):
+    doc_vec = np.array([0.0 for k in range(word_embeddings_dim)])
+    doc_words = shuffle_doc_words_list[i]
+    words = doc_words.split()
+    doc_len = len(words)
+    for word in words:
+        if word in word_vector_map:
+            word_vector = word_vector_map[word]
+            doc_vec = doc_vec + np.array(word_vector)
+
+    for j in range(word_embeddings_dim):
+        row_allx.append(int(i))
+        col_allx.append(j)
+        # np.random.uniform(-0.25, 0.25)
+        data_allx.append(doc_vec[j] / doc_len)  # doc_vec[j]/doc_len
+
+print(row_allx)
+
+for i in range(vocab_size):
+    for j in range(word_embeddings_dim):
+        row_allx.append(int(i + train_size))
+        col_allx.append(j)
+        data_allx.append(word_vectors.item((i, j))) # Todo: this does nothing
+
+print(row_allx)
+
+row_allx = np.array(row_allx)
+col_allx = np.array(col_allx)
+data_allx = np.array(data_allx)
+
+allx = sp.csr_matrix(
+    (data_allx, (row_allx, col_allx)), shape=(train_size + vocab_size, word_embeddings_dim))
+
+ally = []
+for i in range(train_size):
+    doc_meta = shuffle_doc_name_list[i]
+    temp = doc_meta.split('\t')
+    label = temp[2]
+    one_hot = [0 for l in range(len(label_list))]
+    label_index = label_list.index(label)
+    one_hot[label_index] = 1
+    ally.append(one_hot)
+
 # for i in range(vocab_size):
 #     one_hot = [0 for l in range(len(label_list))]
 #     ally.append(one_hot)
