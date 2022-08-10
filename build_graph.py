@@ -254,9 +254,9 @@ for i in range(real_train_size):
         row_x.append(i)
         col_x.append(j)
         # np.random.uniform(-0.25, 0.25)
-        data_x.append(doc_vec[j] / doc_len)  # doc_vec[j]/ doc_len
+        data_x.append(doc_vec[j] / doc_len)  # doc_vec[j]/ doc_len # Todo: just append docvec in the loop above
 
-print(co_x)
+print(col_x)
 
 # # x = sp.csr_matrix((real_train_size, word_embeddings_dim), dtype=np.float32)
 # x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(
