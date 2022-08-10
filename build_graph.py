@@ -240,19 +240,15 @@ col_x = []
 data_x = []
 for i in range(real_train_size):
     doc_vec = np.array([0.0 for k in range(word_embeddings_dim)])
-    print(doc_vec)
-
     doc_words = shuffle_doc_words_list[i]
     words = doc_words.split()
     doc_len = len(words)
     for word in words:
         if word in word_vector_map:
             word_vector = word_vector_map[word]
-            # print(doc_vec)
-            # print(np.array(word_vector))
+            print(doc_vec)
+            print(np.array(word_vector))
             doc_vec = doc_vec + np.array(word_vector)
-
-    print(doc_vec)
 
     # for j in range(word_embeddings_dim):
     #     row_x.append(i)
