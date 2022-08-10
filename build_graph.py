@@ -261,6 +261,7 @@ for i in range(real_train_size):
 x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(
     real_train_size, word_embeddings_dim))
 
+# Todo: this should be in a function - do it 3 times
 y = []
 for i in range(real_train_size):
     doc_meta = shuffle_doc_name_list[i]
@@ -271,60 +272,59 @@ for i in range(real_train_size):
     one_hot[label_index] = 1
     y.append(one_hot)
 y = np.array(y)
-print(len(y))
-print(len(y[0]))
-#
-# # tx: feature vectors of test docs, no initial features
-# test_size = len(test_ids)
-#
-# row_tx = []
-# col_tx = []
-# data_tx = []
-# for i in range(test_size):
-#     doc_vec = np.array([0.0 for k in range(word_embeddings_dim)])
-#     doc_words = shuffle_doc_words_list[i + train_size]
-#     words = doc_words.split()
-#     doc_len = len(words)
-#     for word in words:
-#         if word in word_vector_map:
-#             word_vector = word_vector_map[word]
-#             doc_vec = doc_vec + np.array(word_vector)
-#
-#     for j in range(word_embeddings_dim):
-#         row_tx.append(i)
-#         col_tx.append(j)
-#         # np.random.uniform(-0.25, 0.25)
-#         data_tx.append(doc_vec[j] / doc_len)  # doc_vec[j] / doc_len
-#
-# # tx = sp.csr_matrix((test_size, word_embeddings_dim), dtype=np.float32)
-# tx = sp.csr_matrix((data_tx, (row_tx, col_tx)),
-#                    shape=(test_size, word_embeddings_dim))
-#
-# ty = []
-# for i in range(test_size):
-#     doc_meta = shuffle_doc_name_list[i + train_size]
-#     temp = doc_meta.split('\t')
-#     label = temp[2]
-#     one_hot = [0 for l in range(len(label_list))]
-#     label_index = label_list.index(label)
-#     one_hot[label_index] = 1
-#     ty.append(one_hot)
-# ty = np.array(ty)
-# print(ty)
-#
-# # allx: the the feature vectors of both labeled and unlabeled training instances
-# # (a superset of x)
-# # unlabeled training instances -> words
-#
-# word_vectors = np.random.uniform(-0.01, 0.01,
-#                                  (vocab_size, word_embeddings_dim))
-#
-# for i in range(len(vocab)):
-#     word = vocab[i]
-#     if word in word_vector_map:
-#         vector = word_vector_map[word]
-#         word_vectors[i] = vector
-#
+
+# tx: Do the same for the training data
+test_size = len(test_ids)
+
+# Todo: rewrite, as above
+row_tx = []
+col_tx = []
+data_tx = []
+for i in range(test_size):
+    doc_vec = np.array([0.0 for k in range(word_embeddings_dim)])
+    doc_words = shuffle_doc_words_list[i + train_size]
+    words = doc_words.split()
+    doc_len = len(words)
+    for word in words:
+        if word in word_vector_map:
+            word_vector = word_vector_map[word]
+            doc_vec = doc_vec + np.array(word_vector)
+
+    for j in range(word_embeddings_dim):
+        row_tx.append(i)
+        col_tx.append(j)
+        # np.random.uniform(-0.25, 0.25)
+        data_tx.append(doc_vec[j] / doc_len)  # doc_vec[j] / doc_len
+
+# tx = sp.csr_matrix((test_size, word_embeddings_dim), dtype=np.float32)
+tx = sp.csr_matrix((data_tx, (row_tx, col_tx)),
+                   shape=(test_size, word_embeddings_dim))
+
+ty = []
+for i in range(test_size):
+    doc_meta = shuffle_doc_name_list[i + train_size]
+    temp = doc_meta.split('\t')
+    label = temp[2]
+    one_hot = [0 for l in range(len(label_list))]
+    label_index = label_list.index(label)
+    one_hot[label_index] = 1
+    ty.append(one_hot)
+ty = np.array(ty)
+
+# allx: the the feature vectors of both labeled and unlabeled training instances
+# (a superset of x)
+# unlabeled training instances -> words
+
+word_vectors = np.random.uniform(-0.01, 0.01,
+                                 (vocab_size, word_embeddings_dim))
+
+for i in range(len(vocab)):
+    word = vocab[i]
+    if word in word_vector_map:
+        print("true")
+        vector = word_vector_map[word]
+        word_vectors[i] = vector
+
 # row_allx = []
 # col_allx = []
 # data_allx = []
