@@ -311,21 +311,8 @@ for i in range(test_size):
     ty.append(one_hot)
 ty = np.array(ty)
 
-# allx: the the feature vectors of both labeled and unlabeled training instances
+# allx: do the same thing, but with the train and eval samples
 # (a superset of x)
-# unlabeled training instances -> words
-
-word_vectors = np.random.uniform(-0.01, 0.01,
-                                 (vocab_size, word_embeddings_dim))
-
-# Todo: This does nothing - delete
-for i in range(len(vocab)):
-    word = vocab[i]
-    if word in word_vector_map:
-        print("true")
-        vector = word_vector_map[word]
-        word_vectors[i] = vector
-
 row_allx = []
 col_allx = []
 data_allx = []
@@ -345,15 +332,23 @@ for i in range(train_size):
         # np.random.uniform(-0.25, 0.25)
         data_allx.append(doc_vec[j] / doc_len)  # doc_vec[j]/doc_len
 
-print(len(row_allx))
+# Also add in the length of the vocab
+word_vectors = np.random.uniform(-0.01, 0.01,
+                                 (vocab_size, word_embeddings_dim))
+
+# Todo: This does nothing - delete
+for i in range(len(vocab)):
+    word = vocab[i]
+    if word in word_vector_map:
+        print("true")
+        vector = word_vector_map[word]
+        word_vectors[i] = vector
 
 for i in range(vocab_size):
     for j in range(word_embeddings_dim):
         row_allx.append(int(i + train_size))
         col_allx.append(j)
         data_allx.append(word_vectors.item((i, j))) # Todo: this does nothing
-
-print(len(row_allx))
 
 row_allx = np.array(row_allx)
 col_allx = np.array(col_allx)
@@ -372,13 +367,13 @@ for i in range(train_size):
     one_hot[label_index] = 1
     ally.append(one_hot)
 
-# for i in range(vocab_size):
-#     one_hot = [0 for l in range(len(label_list))]
-#     ally.append(one_hot)
-#
-# ally = np.array(ally)
-#
-# print(x.shape, y.shape, tx.shape, ty.shape, allx.shape, ally.shape)
+for i in range(vocab_size):
+    one_hot = [0 for l in range(len(label_list))]
+    ally.append(one_hot)
+
+ally = np.array(ally)
+
+print(x.shape, y.shape, tx.shape, ty.shape, allx.shape, ally.shape)
 #
 # '''
 # Doc word heterogeneous graph
