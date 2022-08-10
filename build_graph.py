@@ -13,11 +13,15 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import sys
 from scipy.spatial.distance import cosine
 
+# Parameters
+word_embeddings_dim = 300
+window_size = 20   # size of windows in which to look for co-occurance of words
+
+# Check dataset
 if len(sys.argv) != 2:
 	sys.exit("Use: python build_graph.py <dataset>")
 
 datasets = ['20ng', 'R8', 'R52', 'ohsumed', 'mr']
-# build corpus
 dataset = sys.argv[1]
 
 if dataset not in datasets:
@@ -29,9 +33,9 @@ if dataset not in datasets:
 #_, embd, word_vector_map = loadWord2Vec(word_vector_file)
 # word_embeddings_dim = len(embd[0])
 
-# Parameters
-word_embeddings_dim = 300
-window_size = 20   # size of windows in which to look for co-occurance of words
+'''
+Open and shuffle data  
+'''
 
 # Pull text ids, split (test/train) and label
 doc_name_list = []
@@ -69,7 +73,7 @@ for train_name in doc_train_list:
     train_ids.append(train_id)
 random.shuffle(train_ids)
 
-# # partial labeled data
+# # partial labeled data # Todo: look more into this
 # #train_ids = train_ids[:int(0.2 * len(train_ids))]
 
 train_ids_str = '\n'.join(str(index) for index in train_ids)
@@ -106,53 +110,32 @@ f = open('data/corpus/' + dataset + '_shuffle.txt', 'w')
 f.write(shuffle_doc_words_str)
 f.close()
 
+'''
+Create list of vocab 
+'''
+
 # Build vocab
-word_freq = {}
 word_set = set()
 for doc_words in shuffle_doc_words_list:
     words = doc_words.split()
     for word in words:
         word_set.add(word)
-        if word in word_freq:
-            word_freq[word] += 1
-        else:
-            word_freq[word] = 1
 
 vocab = list(word_set)
 vocab_size = len(vocab)
 
 print(f"Vocabulary size: {vocab_size}")
 
-word_doc_list = {}
-
-for i in range(len(shuffle_doc_words_list)):
-    doc_words = shuffle_doc_words_list[i]
-    words = doc_words.split()
-    appeared = set()
-    for word in words:
-        if word in appeared:
-            continue
-        if word in word_doc_list:
-            doc_list = word_doc_list[word]
-            doc_list.append(i)
-            word_doc_list[word] = doc_list
-        else:
-            word_doc_list[word] = [i]
-        appeared.add(word)
-
-word_doc_freq = {}
-for word, doc_list in word_doc_list.items():
-    word_doc_freq[word] = len(doc_list)
-
-word_id_map = {}
-for i in range(vocab_size):
-    word_id_map[vocab[i]] = i
-
 vocab_str = '\n'.join(vocab)
 
 f = open('data/corpus/' + dataset + '_vocab.txt', 'w')
 f.write(vocab_str)
 f.close()
+
+# dictionary [word] : [unique_word_id]
+word_id_map = {}
+for i in range(vocab_size):
+    word_id_map[vocab[i]] = i
 
 '''
 Word definitions begin 
@@ -210,6 +193,11 @@ word_embeddings_dim = len(embd[0])
 '''
 Word definitions end
 '''
+
+'''
+Create feature representations of data  
+'''
+
 word_vector_map = {} # Todo: might not need this if get rid of all the redundant code
 
 # Create list of unique labels
@@ -378,7 +366,7 @@ ally = np.array(ally)
 print("Featurized matrix sizes:", x.shape, y.shape, tx.shape, ty.shape, allx.shape, ally.shape)
 
 '''
-Doc word heterogeneous graph
+Calculate PMI, for word-word edges 
 '''
 
 # Create list of sliding windows, moving by one word each time
@@ -406,6 +394,7 @@ for window in windows:
             word_window_freq[window[i]] = 1
         appeared.add(window[i])
 
+# Frequencies of co-occurance of word pairs
 word_pair_count = {}
 for window in windows:
     for i in range(1, len(window)):
@@ -428,13 +417,10 @@ for window in windows:
             else:
                 word_pair_count[word_pair_str] = 1
 
-print(json.dumps(word_pair_count, indent=4))
-
+# # Calcuate PMI
 # row = []
 # col = []
 # weight = []
-#
-# # pmi as weights
 #
 # num_window = len(windows)
 #
@@ -452,25 +438,63 @@ print(json.dumps(word_pair_count, indent=4))
 #     row.append(train_size + i)
 #     col.append(train_size + j)
 #     weight.append(pmi)
-#
-# # word vector cosine similarity as weights
-#
-# '''
-# for i in range(vocab_size):
-#     for j in range(vocab_size):
-#         if vocab[i] in word_vector_map and vocab[j] in word_vector_map:
-#             vector_i = np.array(word_vector_map[vocab[i]])
-#             vector_j = np.array(word_vector_map[vocab[j]])
-#             similarity = 1.0 - cosine(vector_i, vector_j)
-#             if similarity > 0.9:
-#                 print(vocab[i], vocab[j], similarity)
-#                 row.append(train_size + i)
-#                 col.append(train_size + j)
-#                 weight.append(similarity)
-# '''
-# # doc word frequency
-# doc_word_freq = {}
-#
+
+# word vector cosine similarity as weights # Todo: remove
+'''
+for i in range(vocab_size):
+    for j in range(vocab_size):
+        if vocab[i] in word_vector_map and vocab[j] in word_vector_map:
+            vector_i = np.array(word_vector_map[vocab[i]])
+            vector_j = np.array(word_vector_map[vocab[j]])
+            similarity = 1.0 - cosine(vector_i, vector_j)
+            if similarity > 0.9:
+                print(vocab[i], vocab[j], similarity)
+                row.append(train_size + i)
+                col.append(train_size + j)
+                weight.append(similarity)
+'''
+
+'''
+Calculate TF-IDF, for document-word edges 
+'''
+
+# dict of hte number of times each word is used in entire corpus
+word_freq = {}
+for doc_words in shuffle_doc_words_list:
+    words = doc_words.split()
+    for word in words:
+        if word in word_freq:
+            word_freq[word] += 1
+        else:
+            word_freq[word] = 1
+
+# dictionary [word] : [ids of all texts that use that word]
+word_doc_list = {}
+for i in range(len(shuffle_doc_words_list)):
+    doc_words = shuffle_doc_words_list[i]
+    words = doc_words.split()
+    appeared = set()
+    for word in words:
+        if word in appeared:
+            continue
+        if word in word_doc_list:
+            doc_list = word_doc_list[word]
+            doc_list.append(i)
+            word_doc_list[word] = doc_list
+        else:
+            word_doc_list[word] = [i]
+        appeared.add(word)
+
+# dictionary [word] : [number of texts that use that word]
+word_doc_freq = {}
+for word, doc_list in word_doc_list.items():
+    word_doc_freq[word] = len(doc_list)
+
+
+
+# doc word frequency
+doc_word_freq = {}
+
 # for doc_id in range(len(shuffle_doc_words_list)):
 #     doc_words = shuffle_doc_words_list[doc_id]
 #     words = doc_words.split()
