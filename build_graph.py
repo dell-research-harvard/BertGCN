@@ -256,7 +256,7 @@ for i in range(real_train_size):
         # np.random.uniform(-0.25, 0.25)
         data_x.append(doc_vec[j] / doc_len)  # doc_vec[j]/ doc_len # Todo: just append docvec in the loop above
 
-print(data_x)
+print(len(data_x))
 
 # # x = sp.csr_matrix((real_train_size, word_embeddings_dim), dtype=np.float32)
 # x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(
