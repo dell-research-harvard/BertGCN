@@ -405,30 +405,31 @@ for window in windows:
         else:
             word_window_freq[window[i]] = 1
         appeared.add(window[i])
-print(json.dumps(word_window_freq, indent=4))
-#
-# word_pair_count = {}
-# for window in windows:
-#     for i in range(1, len(window)):
-#         for j in range(0, i):
-#             word_i = window[i]
-#             word_i_id = word_id_map[word_i]
-#             word_j = window[j]
-#             word_j_id = word_id_map[word_j]
-#             if word_i_id == word_j_id:
-#                 continue
-#             word_pair_str = str(word_i_id) + ',' + str(word_j_id)
-#             if word_pair_str in word_pair_count:
-#                 word_pair_count[word_pair_str] += 1
-#             else:
-#                 word_pair_count[word_pair_str] = 1
-#             # two orders
-#             word_pair_str = str(word_j_id) + ',' + str(word_i_id)
-#             if word_pair_str in word_pair_count:
-#                 word_pair_count[word_pair_str] += 1
-#             else:
-#                 word_pair_count[word_pair_str] = 1
-#
+
+word_pair_count = {}
+for window in windows:
+    for i in range(1, len(window)):
+        for j in range(0, i):
+            word_i = window[i]
+            word_i_id = word_id_map[word_i]
+            word_j = window[j]
+            word_j_id = word_id_map[word_j]
+            if word_i_id == word_j_id:
+                continue
+            word_pair_str = str(word_i_id) + ',' + str(word_j_id)
+            if word_pair_str in word_pair_count:
+                word_pair_count[word_pair_str] += 1
+            else:
+                word_pair_count[word_pair_str] = 1
+            # two orders
+            word_pair_str = str(word_j_id) + ',' + str(word_i_id)
+            if word_pair_str in word_pair_count:
+                word_pair_count[word_pair_str] += 1
+            else:
+                word_pair_count[word_pair_str] = 1
+
+print(json.dumps(word_pair_count, indent=4))
+
 # row = []
 # col = []
 # weight = []
