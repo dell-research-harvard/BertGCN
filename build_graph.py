@@ -272,7 +272,7 @@ for i in range(real_train_size):
     y.append(one_hot)
 y = np.array(y)
 print(len(y))
-print(len(y)[0])
+print(len(y[0]))
 #
 # # tx: feature vectors of test docs, no initial features
 # test_size = len(test_ids)
