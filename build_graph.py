@@ -139,126 +139,127 @@ for i in range(len(shuffle_doc_words_list)):
             word_doc_list[word] = [i]
         appeared.add(word)
 
-print(json.dumps(word_doc_list, indent=4))
+word_doc_freq = {}
+for word, doc_list in word_doc_list.items():
+    word_doc_freq[word] = len(doc_list)
 
-# word_doc_freq = {}
-# for word, doc_list in word_doc_list.items():
-#     word_doc_freq[word] = len(doc_list)
-#
-# word_id_map = {}
-# for i in range(vocab_size):
-#     word_id_map[vocab[i]] = i
-#
-# vocab_str = '\n'.join(vocab)
-#
-# f = open('data/corpus/' + dataset + '_vocab.txt', 'w')
-# f.write(vocab_str)
-# f.close()
-#
-# '''
-# Word definitions begin
-# '''
-# '''
-# definitions = []
-#
-# for word in vocab:
-#     word = word.strip()
-#     synsets = wn.synsets(clean_str(word))
-#     word_defs = []
-#     for synset in synsets:
-#         syn_def = synset.definition()
-#         word_defs.append(syn_def)
-#     word_des = ' '.join(word_defs)
-#     if word_des == '':
-#         word_des = '<PAD>'
-#     definitions.append(word_des)
-#
-# string = '\n'.join(definitions)
-#
-#
-# f = open('data/corpus/' + dataset + '_vocab_def.txt', 'w')
-# f.write(string)
-# f.close()
-#
-# tfidf_vec = TfidfVectorizer(max_features=1000)
-# tfidf_matrix = tfidf_vec.fit_transform(definitions)
-# tfidf_matrix_array = tfidf_matrix.toarray()
-# print(tfidf_matrix_array[0], len(tfidf_matrix_array[0]))
-#
-# word_vectors = []
-#
-# for i in range(len(vocab)):
-#     word = vocab[i]
-#     vector = tfidf_matrix_array[i]
-#     str_vector = []
-#     for j in range(len(vector)):
-#         str_vector.append(str(vector[j]))
-#     temp = ' '.join(str_vector)
-#     word_vector = word + ' ' + temp
-#     word_vectors.append(word_vector)
-#
-# string = '\n'.join(word_vectors)
-#
-# f = open('data/corpus/' + dataset + '_word_vectors.txt', 'w')
-# f.write(string)
-# f.close()
-#
-# word_vector_file = 'data/corpus/' + dataset + '_word_vectors.txt'
-# _, embd, word_vector_map = loadWord2Vec(word_vector_file)
-# word_embeddings_dim = len(embd[0])
-# '''
-#
-# '''
-# Word definitions end
-# '''
-#
-# # label list
-# label_set = set()
-# for doc_meta in shuffle_doc_name_list:
-#     temp = doc_meta.split('\t')
-#     label_set.add(temp[2])
-# label_list = list(label_set)
-#
-# label_list_str = '\n'.join(label_list)
-# f = open('data/corpus/' + dataset + '_labels.txt', 'w')
-# f.write(label_list_str)
-# f.close()
-#
-# # x: feature vectors of training docs, no initial features
-# # slect 90% training set
-# train_size = len(train_ids)
-# val_size = int(0.1 * train_size)
-# real_train_size = train_size - val_size  # - int(0.5 * train_size)
-# # different training rates
-#
-# real_train_doc_names = shuffle_doc_name_list[:real_train_size]
-# real_train_doc_names_str = '\n'.join(real_train_doc_names)
-#
-# f = open('data/' + dataset + '.real_train.name', 'w')
-# f.write(real_train_doc_names_str)
-# f.close()
-#
-# row_x = []
-# col_x = []
-# data_x = []
-# for i in range(real_train_size):
-#     doc_vec = np.array([0.0 for k in range(word_embeddings_dim)])
-#     doc_words = shuffle_doc_words_list[i]
-#     words = doc_words.split()
-#     doc_len = len(words)
-#     for word in words:
-#         if word in word_vector_map:
-#             word_vector = word_vector_map[word]
-#             # print(doc_vec)
-#             # print(np.array(word_vector))
-#             doc_vec = doc_vec + np.array(word_vector)
-#
-#     for j in range(word_embeddings_dim):
-#         row_x.append(i)
-#         col_x.append(j)
-#         # np.random.uniform(-0.25, 0.25)
-#         data_x.append(doc_vec[j] / doc_len)  # doc_vec[j]/ doc_len
-#
+word_id_map = {}
+for i in range(vocab_size):
+    word_id_map[vocab[i]] = i
+
+vocab_str = '\n'.join(vocab)
+
+f = open('data/corpus/' + dataset + '_vocab.txt', 'w')
+f.write(vocab_str)
+f.close()
+
+'''
+Word definitions begin
+'''
+'''
+definitions = []
+
+for word in vocab:
+    word = word.strip()
+    synsets = wn.synsets(clean_str(word))
+    word_defs = []
+    for synset in synsets:
+        syn_def = synset.definition()
+        word_defs.append(syn_def)
+    word_des = ' '.join(word_defs)
+    if word_des == '':
+        word_des = '<PAD>'
+    definitions.append(word_des)
+
+string = '\n'.join(definitions)
+
+
+f = open('data/corpus/' + dataset + '_vocab_def.txt', 'w')
+f.write(string)
+f.close()
+
+tfidf_vec = TfidfVectorizer(max_features=1000)
+tfidf_matrix = tfidf_vec.fit_transform(definitions)
+tfidf_matrix_array = tfidf_matrix.toarray()
+print(tfidf_matrix_array[0], len(tfidf_matrix_array[0]))
+
+word_vectors = []
+
+for i in range(len(vocab)):
+    word = vocab[i]
+    vector = tfidf_matrix_array[i]
+    str_vector = []
+    for j in range(len(vector)):
+        str_vector.append(str(vector[j]))
+    temp = ' '.join(str_vector)
+    word_vector = word + ' ' + temp
+    word_vectors.append(word_vector)
+
+string = '\n'.join(word_vectors)
+
+f = open('data/corpus/' + dataset + '_word_vectors.txt', 'w')
+f.write(string)
+f.close()
+
+word_vector_file = 'data/corpus/' + dataset + '_word_vectors.txt'
+_, embd, word_vector_map = loadWord2Vec(word_vector_file)
+word_embeddings_dim = len(embd[0])
+'''
+
+'''
+Word definitions end
+'''
+
+# Create list of unique labels
+label_set = set()
+for doc_meta in shuffle_doc_name_list:
+    temp = doc_meta.split('\t')
+    label_set.add(temp[2])
+label_list = list(label_set)
+
+label_list_str = '\n'.join(label_list)
+f = open('data/corpus/' + dataset + '_labels.txt', 'w')
+f.write(label_list_str)
+f.close()
+
+# Split 10% of the training data off to be the eval set
+train_size = len(train_ids)
+val_size = int(0.1 * train_size)
+real_train_size = train_size - val_size  # - int(0.5 * train_size)
+# different training rates
+
+real_train_doc_names = shuffle_doc_name_list[:real_train_size]
+real_train_doc_names_str = '\n'.join(real_train_doc_names)
+
+f = open('data/' + dataset + '.real_train.name', 'w')
+f.write(real_train_doc_names_str)
+f.close()
+
+row_x = []
+col_x = []
+data_x = []
+for i in range(real_train_size):
+    doc_vec = np.array([0.0 for k in range(word_embeddings_dim)])
+    print(doc_vec)
+
+    doc_words = shuffle_doc_words_list[i]
+    words = doc_words.split()
+    doc_len = len(words)
+    for word in words:
+        if word in word_vector_map:
+            word_vector = word_vector_map[word]
+            # print(doc_vec)
+            # print(np.array(word_vector))
+            doc_vec = doc_vec + np.array(word_vector)
+
+    print(doc_vec)
+
+    # for j in range(word_embeddings_dim):
+    #     row_x.append(i)
+    #     col_x.append(j)
+    #     # np.random.uniform(-0.25, 0.25)
+    #     data_x.append(doc_vec[j] / doc_len)  # doc_vec[j]/ doc_len
+
 # # x = sp.csr_matrix((real_train_size, word_embeddings_dim), dtype=np.float32)
 # x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(
 #     real_train_size, word_embeddings_dim))
