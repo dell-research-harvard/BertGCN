@@ -381,7 +381,7 @@ print("Featurized matrix sizes:", x.shape, y.shape, tx.shape, ty.shape, allx.sha
 Doc word heterogeneous graph
 '''
 
-# word co-occurence with context windows
+# Create list of sliding windows, moving by one word each time
 windows = []
 for doc_words in shuffle_doc_words_list:
     words = doc_words.split()
@@ -389,23 +389,23 @@ for doc_words in shuffle_doc_words_list:
     if length <= window_size:
         windows.append(words)
     else:
-        # print(length, length - window_size + 1)
         for j in range(length - window_size + 1):
             window = words[j: j + window_size]
             windows.append(window)
-            print(window)
-#
-# word_window_freq = {}
-# for window in windows:
-#     appeared = set()
-#     for i in range(len(window)):
-#         if window[i] in appeared:
-#             continue
-#         if window[i] in word_window_freq:
-#             word_window_freq[window[i]] += 1
-#         else:
-#             word_window_freq[window[i]] = 1
-#         appeared.add(window[i])
+
+# Number of windows that a word appears in
+word_window_freq = {}
+for window in windows:
+    appeared = set()
+    for i in range(len(window)):
+        if window[i] in appeared:
+            continue
+        if window[i] in word_window_freq:
+            word_window_freq[window[i]] += 1
+        else:
+            word_window_freq[window[i]] = 1
+        appeared.add(window[i])
+print(json.dumps(word_window_freq, indent=4))
 #
 # word_pair_count = {}
 # for window in windows:
