@@ -241,7 +241,7 @@ row_x = []
 col_x = []
 data_x = []
 for i in range(real_train_size):
-    doc_vec = np.array([0.0 for k in range(word_embeddings_dim)])
+    doc_vec = np.array([0.0 for k in range(word_embeddings_dim)]) # Todo: remove
     doc_words = shuffle_doc_words_list[i]
     words = doc_words.split()
     doc_len = len(words)
@@ -254,14 +254,14 @@ for i in range(real_train_size):
         row_x.append(i)
         col_x.append(j)
         # np.random.uniform(-0.25, 0.25)
-        data_x.append(doc_vec[j] / doc_len)  # doc_vec[j]/ doc_len # Todo: just append docvec in the loop above
+        data_x.append(doc_vec[j] / doc_len)  # doc_vec[j]/ doc_len # Todo: just append 0.0
 
-print(len(data_x))
+# x = sp.csr_matrix((real_train_size, word_embeddings_dim), dtype=np.float32)
+x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(
+    real_train_size, word_embeddings_dim))
 
-# # x = sp.csr_matrix((real_train_size, word_embeddings_dim), dtype=np.float32)
-# x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(
-#     real_train_size, word_embeddings_dim))
-#
+print(x)
+
 # y = []
 # for i in range(real_train_size):
 #     doc_meta = shuffle_doc_name_list[i]
