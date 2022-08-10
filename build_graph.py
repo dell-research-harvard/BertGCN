@@ -260,7 +260,7 @@ for i in range(real_train_size):
 x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(
     real_train_size, word_embeddings_dim))
 
-print(x)
+print(x.toarray())
 
 # y = []
 # for i in range(real_train_size):
