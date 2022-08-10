@@ -345,7 +345,7 @@ for i in range(train_size):
         # np.random.uniform(-0.25, 0.25)
         data_allx.append(doc_vec[j] / doc_len)  # doc_vec[j]/doc_len
 
-print(row_allx)
+print(min(row_allx))
 
 for i in range(vocab_size):
     for j in range(word_embeddings_dim):
@@ -353,7 +353,7 @@ for i in range(vocab_size):
         col_allx.append(j)
         data_allx.append(word_vectors.item((i, j))) # Todo: this does nothing
 
-print(row_allx)
+print(min(row_allx))
 
 row_allx = np.array(row_allx)
 col_allx = np.array(col_allx)
