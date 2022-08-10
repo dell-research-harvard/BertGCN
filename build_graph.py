@@ -132,7 +132,7 @@ f = open('data/corpus/' + dataset + '_vocab.txt', 'w')
 f.write(vocab_str)
 f.close()
 
-# dictionary [word] : [unique_word_id]
+# Dictionary dictionary mapping words to unique ids
 word_id_map = {}
 for i in range(vocab_size):
     word_id_map[vocab[i]] = i
@@ -417,27 +417,29 @@ for window in windows:
             else:
                 word_pair_count[word_pair_str] = 1
 
-# # Calcuate PMI
-# row = []
-# col = []
-# weight = []
-#
-# num_window = len(windows)
-#
-# for key in word_pair_count:
-#     temp = key.split(',')
-#     i = int(temp[0])
-#     j = int(temp[1])
-#     count = word_pair_count[key]
-#     word_freq_i = word_window_freq[vocab[i]]
-#     word_freq_j = word_window_freq[vocab[j]]
-#     pmi = log((1.0 * count / num_window) /
-#               (1.0 * word_freq_i * word_freq_j/(num_window * num_window)))
-#     if pmi <= 0:
-#         continue
-#     row.append(train_size + i)
-#     col.append(train_size + j)
-#     weight.append(pmi)
+# Calcuate PMI
+row = []
+col = []
+weight = []
+
+num_window = len(windows)
+
+for key in word_pair_count:
+    temp = key.split(',')
+    i = int(temp[0])
+    j = int(temp[1])
+    count = word_pair_count[key]
+    word_freq_i = word_window_freq[vocab[i]]
+    word_freq_j = word_window_freq[vocab[j]]
+    pmi = log((1.0 * count / num_window) /
+              (1.0 * word_freq_i * word_freq_j/(num_window * num_window)))
+    if pmi <= 0:
+        continue
+    row.append(train_size + i)
+    col.append(train_size + j)
+    weight.append(pmi)
+
+print(row)
 
 # word vector cosine similarity as weights # Todo: remove
 '''
@@ -458,7 +460,7 @@ for i in range(vocab_size):
 Calculate TF-IDF, for document-word edges 
 '''
 
-# dict of hte number of times each word is used in entire corpus
+# dict of the number of times each word is used in entire corpus
 word_freq = {}
 for doc_words in shuffle_doc_words_list:
     words = doc_words.split()
@@ -490,11 +492,8 @@ word_doc_freq = {}
 for word, doc_list in word_doc_list.items():
     word_doc_freq[word] = len(doc_list)
 
-
-
-# doc word frequency
-doc_word_freq = {}
-
+# # doc word frequency
+# doc_word_freq = {}
 # for doc_id in range(len(shuffle_doc_words_list)):
 #     doc_words = shuffle_doc_words_list[doc_id]
 #     words = doc_words.split()
