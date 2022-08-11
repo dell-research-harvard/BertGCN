@@ -195,7 +195,7 @@ Word definitions end
 '''
 
 '''
-Create feature representations of data  
+Create nodes   
 '''
 
 word_vector_map = {} # Todo: might not need this if get rid of all the redundant code
@@ -365,6 +365,30 @@ ally = np.array(ally)
 
 print("Featurized matrix sizes:", x.shape, y.shape, tx.shape, ty.shape, allx.shape, ally.shape)
 
+f = open("data/ind.{}.x".format(dataset), 'wb')
+pkl.dump(x, f)
+f.close()
+
+f = open("data/ind.{}.y".format(dataset), 'wb')
+pkl.dump(y, f)
+f.close()
+
+f = open("data/ind.{}.tx".format(dataset), 'wb')
+pkl.dump(tx, f)
+f.close()
+
+f = open("data/ind.{}.ty".format(dataset), 'wb')
+pkl.dump(ty, f)
+f.close()
+
+f = open("data/ind.{}.allx".format(dataset), 'wb')
+pkl.dump(allx, f)
+f.close()
+
+f = open("data/ind.{}.ally".format(dataset), 'wb')
+pkl.dump(ally, f)
+f.close()
+
 '''
 Calculate PMI, for word-word edges 
 '''
@@ -439,8 +463,6 @@ for key in word_pair_count:
     col.append(train_size + j)
     weight.append(pmi)
 
-print(row)
-
 # word vector cosine similarity as weights # Todo: remove
 '''
 for i in range(vocab_size):
@@ -470,7 +492,7 @@ for doc_words in shuffle_doc_words_list:
         else:
             word_freq[word] = 1
 
-# dictionary [word] : [ids of all texts that use that word]
+# dictionary of words to list of ids of all texts that use that word
 word_doc_list = {}
 for i in range(len(shuffle_doc_words_list)):
     doc_words = shuffle_doc_words_list[i]
@@ -487,73 +509,55 @@ for i in range(len(shuffle_doc_words_list)):
             word_doc_list[word] = [i]
         appeared.add(word)
 
-# dictionary [word] : [number of texts that use that word]
+# dictionary of words and number of texts that use that word
 word_doc_freq = {}
 for word, doc_list in word_doc_list.items():
     word_doc_freq[word] = len(doc_list)
 
-# # doc word frequency
-# doc_word_freq = {}
-# for doc_id in range(len(shuffle_doc_words_list)):
-#     doc_words = shuffle_doc_words_list[doc_id]
-#     words = doc_words.split()
-#     for word in words:
-#         word_id = word_id_map[word]
-#         doc_word_str = str(doc_id) + ',' + str(word_id)
-#         if doc_word_str in doc_word_freq:
-#             doc_word_freq[doc_word_str] += 1
-#         else:
-#             doc_word_freq[doc_word_str] = 1
-#
-# for i in range(len(shuffle_doc_words_list)):
-#     doc_words = shuffle_doc_words_list[i]
-#     words = doc_words.split()
-#     doc_word_set = set()
-#     for word in words:
-#         if word in doc_word_set:
-#             continue
-#         j = word_id_map[word]
-#         key = str(i) + ',' + str(j)
-#         freq = doc_word_freq[key]
-#         if i < train_size:
-#             row.append(i)
-#         else:
-#             row.append(i + vocab_size)
-#         col.append(train_size + j)
-#         idf = log(1.0 * len(shuffle_doc_words_list) /
-#                   word_doc_freq[vocab[j]])
-#         weight.append(freq * idf)
-#         doc_word_set.add(word)
-#
-# node_size = train_size + vocab_size + test_size
-# adj = sp.csr_matrix(
-#     (weight, (row, col)), shape=(node_size, node_size))
-#
-# # dump objects
-# f = open("data/ind.{}.x".format(dataset), 'wb')
-# pkl.dump(x, f)
-# f.close()
-#
-# f = open("data/ind.{}.y".format(dataset), 'wb')
-# pkl.dump(y, f)
-# f.close()
-#
-# f = open("data/ind.{}.tx".format(dataset), 'wb')
-# pkl.dump(tx, f)
-# f.close()
-#
-# f = open("data/ind.{}.ty".format(dataset), 'wb')
-# pkl.dump(ty, f)
-# f.close()
-#
-# f = open("data/ind.{}.allx".format(dataset), 'wb')
-# pkl.dump(allx, f)
-# f.close()
-#
-# f = open("data/ind.{}.ally".format(dataset), 'wb')
-# pkl.dump(ally, f)
-# f.close()
-#
-# f = open("data/ind.{}.adj".format(dataset), 'wb')
-# pkl.dump(adj, f)
-# f.close()
+# doc word frequency
+doc_word_freq = {}
+for doc_id in range(len(shuffle_doc_words_list)):
+    doc_words = shuffle_doc_words_list[doc_id]
+    words = doc_words.split()
+    for word in words:
+        word_id = word_id_map[word]
+        doc_word_str = str(doc_id) + ',' + str(word_id)
+        if doc_word_str in doc_word_freq:
+            doc_word_freq[doc_word_str] += 1
+        else:
+            doc_word_freq[doc_word_str] = 1
+
+# Calculate TF_IDF
+for i in range(len(shuffle_doc_words_list)):
+    doc_words = shuffle_doc_words_list[i]
+    words = doc_words.split()
+    doc_word_set = set()
+    for word in words:
+        if word in doc_word_set:
+            continue
+        j = word_id_map[word]
+        key = str(i) + ',' + str(j)
+        freq = doc_word_freq[key]
+        if i < train_size:
+            row.append(i)
+        else:
+            row.append(i + vocab_size)
+        col.append(train_size + j)
+        idf = log(1.0 * len(shuffle_doc_words_list) /
+                  word_doc_freq[vocab[j]])
+        weight.append(freq * idf)
+        doc_word_set.add(word)
+
+'''
+Put this all together in a graph and save  
+'''
+
+node_size = train_size + vocab_size + test_size
+adj = sp.csr_matrix(
+    (weight, (row, col)), shape=(node_size, node_size))
+
+print(adj.toarray())
+
+f = open("data/ind.{}.adj".format(dataset), 'wb')
+pkl.dump(adj, f)
+f.close()
