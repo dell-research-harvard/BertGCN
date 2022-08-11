@@ -14,7 +14,7 @@ import sys
 from scipy.spatial.distance import cosine
 
 
-def load_and_shuffle_data():
+def load_and_shuffle_data(dataset):
 
     print("Opening and shuffling data...")
 
@@ -23,7 +23,6 @@ def load_and_shuffle_data():
         sys.exit("Use: python build_graph.py <dataset>")
 
     datasets = ['20ng', 'R8', 'R52', 'ohsumed', 'mr']
-    dataset = sys.argv[1]
 
     if dataset not in datasets:
         sys.exit("wrong dataset name")
@@ -98,7 +97,7 @@ def load_and_shuffle_data():
     return shuffle_doc_name_list, shuffle_doc_words_list, splits['train']['ids'], splits['test']['ids']
 
 
-def create_vocab_list(shuffle_doc_words_list):
+def create_vocab_list(shuffle_doc_words_list, dataset):
 
     # Build vocab
     word_set = set()
@@ -132,7 +131,8 @@ def create_node_vectors(
         train_ids,
         test_ids,
         word_embeddings_dim,
-        vocab_size
+        vocab_size,
+        dataset
 ):
 
     print("Creating node vectors...")
@@ -329,7 +329,7 @@ def create_node_vectors(
     f.close()
 
 
-def create_edges(shuffle_doc_words_list, vocab, vocab_size, word_id_map, window_size):
+def create_edges(shuffle_doc_words_list, vocab, vocab_size, word_id_map, window_size, dataset):
 
     '''
     Calculate PMI, for word-word edges
@@ -496,9 +496,11 @@ def create_edges(shuffle_doc_words_list, vocab, vocab_size, word_id_map, window_
 
 if __name__ == '__main__':
 
-    shuffle_doc_name_list, shuffle_doc_words_list, train_ids, test_ids = load_and_shuffle_data()
+    dataset_name = sys.argv[1]
 
-    vocab, vocab_size, word_id_map = create_vocab_list(shuffle_doc_words_list)
+    shuffle_doc_name_list, shuffle_doc_words_list, train_ids, test_ids = load_and_shuffle_data(dataset=dataset_name)
+
+    vocab, vocab_size, word_id_map = create_vocab_list(shuffle_doc_words_list, dataset=dataset_name)
 
     create_node_vectors(
         shuffle_doc_name_list,
@@ -506,7 +508,8 @@ if __name__ == '__main__':
         train_ids,
         test_ids,
         word_embeddings_dim=300,
-        vocab_size=vocab_size
+        vocab_size=vocab_size,
+        dataset=dataset_name
     )
 
-    create_edges(shuffle_doc_words_list, vocab, vocab_size, word_id_map, window_size=20)
+    create_edges(shuffle_doc_words_list, vocab, vocab_size, word_id_map, window_size=20, dataset=dataset_name)
