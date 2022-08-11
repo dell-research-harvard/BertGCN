@@ -42,13 +42,13 @@ def load_and_shuffle_data():
         doc_name_list.append(line.strip())
         temp = line.split("\t")
         if temp[1].find('test') != -1:      # find returns -1 if not found
-            splits['names']['test'].append(line.strip())
+            splits['test']['names'].append(line.strip())
         elif temp[1].find('train') != -1:
-            splits['names']['train'].append(line.strip())
+            splits['train']['names'].append(line.strip())
     f.close()
 
-    print(f'{len(splits["train"])} training examples')
-    print(f'{len(splits["test"])} test examples')
+    print(f'{len(splits["train"]["names"])} training examples')
+    print(f'{len(splits["test"]["names"])} test examples')
 
     # Pull texts
     doc_content_list = []
@@ -63,21 +63,21 @@ def load_and_shuffle_data():
     # Shuffle data
     for split in ["train", "test"]:
 
-        for split_name in splits['names'][split]:
+        for split_name in splits[split]['names']:
             split_id = doc_name_list.index(split_name)
-            splits['ids'][split].append(split_id)
-        random.shuffle(splits['ids'][split])
+            splits[split]['ids'].append(split_id)
+        random.shuffle(splits[split]['ids'])
         # Todo: check that this does actually shuffle
 
         # # partial labeled data # Todo: look more into this
         # #train_ids = train_ids[:int(0.2 * len(train_ids))]
 
-        split_ids_str = '\n'.join(str(index) for index in splits['ids'][split])
+        split_ids_str = '\n'.join(str(index) for index in splits[split]['ids'])
         f = open(f'data/{dataset}.{split}.index', 'w')
         f.write(split_ids_str)
         f.close()
 
-    ids = splits['ids']['train'] + splits['ids']['test']
+    ids = splits['train']['ids'] + splits['test']['ids']
 
     shuffle_doc_name_list = []
     shuffle_doc_words_list = []
@@ -95,7 +95,7 @@ def load_and_shuffle_data():
     f.write(shuffle_doc_words_str)
     f.close()
 
-    return shuffle_doc_name_list, shuffle_doc_words_list, splits['ids']['train'], splits['ids']['test']
+    return shuffle_doc_name_list, shuffle_doc_words_list, splits['train']['ids'], splits['test']['ids']
 
 
 def create_vocab_list(shuffle_doc_words_list):
