@@ -116,6 +116,39 @@ def create_vocab_list(shuffle_doc_words_list, dataset):
     return vocab, word_id_map
 
 
+def node_matrix_creation(label_list, shuffle_doc_name_list, dataset, word_embeddings_dim, data_length, save_prefix):
+
+    # Create feature matrix, x,  for training docs. At the moment, we don't have any
+    row_x = list(range(data_length)) * word_embeddings_dim
+    tmp_col_x = [[dim] * data_length for dim in range(word_embeddings_dim)]
+    col_x = [x for l in tmp_col_x for x in l]
+    data_x = [0.0] * (data_length * word_embeddings_dim)
+
+    x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(data_length, word_embeddings_dim))
+
+    # Create y, a sparse matrix of labels
+    y = []
+    for i in range(data_length):
+        doc_meta = shuffle_doc_name_list[i]
+        temp = doc_meta.split('\t')
+        label = temp[2]
+        one_hot = [0 for l in range(len(data_length))]
+        label_index = label_list.index(label)
+        one_hot[label_index] = 1
+        y.append(one_hot)
+    y = np.array(y)
+
+    f = open(f"data/ind.{dataset}.{save_prefix}x", 'wb')
+    pkl.dump(x, f)
+    f.close()
+
+    f = open(f"data/ind.{dataset}.{save_prefix}y", 'wb')
+    pkl.dump(y, f)
+    f.close()
+
+    return x, y # Todo: get rid of this once checked
+
+
 def create_node_vectors(
         shuffle_doc_name_list,
         shuffle_doc_words_list,
@@ -154,73 +187,27 @@ def create_node_vectors(
     f.write(real_train_doc_names_str)
     f.close()
 
-    """
-    old code starts
-    """
-    # Todo: replace with a one line (zeros) -> matrix of real_train_size word_embeddings_dim - can replace up to 264
-    # Create feature matrix, x,  for training docs. At the moment, we don't have any
-    # features so they're all intialised as zero
-    row_x = []
-    col_x = []
-    data_x = []
-    for i in range(real_train_size):
-        doc_vec = np.array([0.0 for k in range(word_embeddings_dim)]) # Todo: remove
-        doc_words = shuffle_doc_words_list[i]
-        words = doc_words.split()
-        doc_len = len(words)
-        for word in words:  # Todo: remove
-            if word in word_vector_map:  # This does not do anything because word_vector_map is an empty dict
-                word_vector = word_vector_map[word]
-                doc_vec = doc_vec + np.array(word_vector)
+    # Create and save node matrices for training data
+    x, y = node_matrix_creation(
+        label_list,
+        shuffle_doc_name_list,
+        dataset_name,
+        word_embeddings_dim,
+        data_length=real_train_size,
+        save_prefix=""
+    )
 
-        for j in range(word_embeddings_dim):
-            row_x.append(i)
-            col_x.append(j)
-            # np.random.uniform(-0.25, 0.25)
-            data_x.append(doc_vec[j] / doc_len)  # doc_vec[j]/ doc_len # Todo: just append 0.0
+    # Create and save node matrices for test data
+    new_tx, new_ty = node_matrix_creation(
+        label_list,
+        shuffle_doc_name_list,
+        dataset_name,
+        word_embeddings_dim,
+        data_length=len(test_ids),
+        save_prefix="t"
+    )
 
-    old_x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(real_train_size, word_embeddings_dim))
-    """
-    old code ends
-    """
-
-    # row_x = []
-    # col_x = []
-    # data_x = []
-    # for i in range(real_train_size):
-    #     for j in range(word_embeddings_dim):
-    #         row_x.append(i)
-    #         col_x.append(j)
-    #         data_x.append(0.0)
-    #
-    # x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(real_train_size, word_embeddings_dim))
-
-    row_x = list(range(real_train_size)) * word_embeddings_dim
-    tmp_col_x = [[dim] * real_train_size for dim in range(word_embeddings_dim)]
-    col_x = [x for l in tmp_col_x for x in l]
-    print(col_x)
-    print(len(col_x))
-    data_x = [0.0] * (real_train_size * word_embeddings_dim)
-
-    x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(real_train_size, word_embeddings_dim))
-
-    assert (x != old_x).nnz == 0
-
-    print("success")
-
-    # Todo: this should be in a function - do it 3 times
-    y = []
-    for i in range(real_train_size):
-        doc_meta = shuffle_doc_name_list[i]
-        temp = doc_meta.split('\t')
-        label = temp[2]
-        one_hot = [0 for l in range(len(label_list))]
-        label_index = label_list.index(label)
-        one_hot[label_index] = 1
-        y.append(one_hot)
-    y = np.array(y)
-
-    # tx: Do the same for the training data
+    # tx: Do the same for the test data
     test_size = len(test_ids)
 
     # Todo: rewrite, as above
@@ -257,6 +244,13 @@ def create_node_vectors(
         one_hot[label_index] = 1
         ty.append(one_hot)
     ty = np.array(ty)
+
+
+    assert (ty != new_ty).nnz == 0
+    assert (tx != new_tx).nnz == 0
+
+    print("success")
+
 
     # allx: do the same thing, but with the train and eval samples
     # (a superset of x)
@@ -320,14 +314,6 @@ def create_node_vectors(
     ally = np.array(ally)
 
     print("Featurized matrix sizes:", x.shape, y.shape, tx.shape, ty.shape, allx.shape, ally.shape)
-
-    f = open("data/ind.{}.x".format(dataset), 'wb')
-    pkl.dump(x, f)
-    f.close()
-
-    f = open("data/ind.{}.y".format(dataset), 'wb')
-    pkl.dump(y, f)
-    f.close()
 
     f = open("data/ind.{}.tx".format(dataset), 'wb')
     pkl.dump(tx, f)
