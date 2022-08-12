@@ -191,9 +191,11 @@ def create_node_vectors(
         for j in range(word_embeddings_dim):
             row_x.append(i)
             col_x.append(j)
-            data_x.append(0.0)  # doc_vec[j]/ doc_len # Todo: just append 0.0
+            data_x.append(0.0)
 
     x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(real_train_size, word_embeddings_dim))
+
+    print(x)
 
     assert np.array_equal(old_x, x)
 
