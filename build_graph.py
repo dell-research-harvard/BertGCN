@@ -12,6 +12,7 @@ from nltk.corpus import wordnet as wn
 from sklearn.feature_extraction.text import TfidfVectorizer
 import sys
 from scipy.spatial.distance import cosine
+import inspect
 
 
 def load_and_shuffle_data(dataset):
