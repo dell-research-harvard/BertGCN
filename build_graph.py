@@ -193,8 +193,8 @@ def create_node_vectors(
     print("**** x ****")
     print(type(x))
 
-    for i in old_x.shape[0]:
-        for j in old_x.shape[1]:
+    for i in range(old_x.shape[0]):
+        for j in range(old_x.shape[1]):
             if old_x[i][j] != x[i][j]:
                 print(old_x[i][j], x[i][j])
 
