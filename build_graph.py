@@ -4,6 +4,7 @@ import pickle as pkl
 import scipy.sparse as sp
 from math import log
 import sys
+from tqdm import tqdm
 
 
 def load_and_shuffle_data(dataset):
@@ -236,7 +237,6 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, datase
     print("Creating word-word edges...")
 
     # Create list of sliding windows, moving by one word each time
-    print("1")
     windows = []
     for doc_words in shuffle_doc_words_list:
         words = doc_words.split()
@@ -248,7 +248,6 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, datase
                 window = words[j: j + window_size]
                 windows.append(window)
 
-    print("2")
     # Number of windows that a word appears in
     word_window_freq = {}
     for window in windows:
@@ -262,10 +261,9 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, datase
                 word_window_freq[window[i]] = 1
             appeared.add(window[i])
 
-    print("3")
     # Frequencies of co-occurance of word pairs
     word_pair_count = {}
-    for window in windows:
+    for window in tqdm(windows):
         for i in range(1, len(window)):
             for j in range(0, i):
                 word_i = window[i]
