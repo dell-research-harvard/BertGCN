@@ -136,6 +136,7 @@ def node_matrix_creation(
 
         row_x = [int(i) for i in row_x]
 
+        np.random.seed(42)
         word_vectors = np.random.uniform(-0.01, 0.01, (len(vocab), word_embeddings_dim))
 
         for i in range(len(vocab)):
@@ -274,6 +275,7 @@ def create_nodes(
             data_allx.append(doc_vec[j] / doc_len)  # doc_vec[j]/doc_len
 
     # Also add in the length of the vocab
+    np.random.seed(42)
     word_vectors = np.random.uniform(-0.01, 0.01, (len(vocab), word_embeddings_dim))
 
     # Todo: This does nothing - delete
