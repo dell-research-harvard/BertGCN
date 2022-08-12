@@ -196,12 +196,18 @@ def create_node_vectors(
     # x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(real_train_size, word_embeddings_dim))
 
     row_x = list(range(real_train_size)) * word_embeddings_dim
+    print(row_x)
+    print(len(row_x))
     col_x = [[dim] * real_train_size for dim in range(word_embeddings_dim)]
+    print(col_x)
+    print(len(col_x))
     data_x = [0.0] * (real_train_size * word_embeddings_dim)
 
     x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(real_train_size, word_embeddings_dim))
 
     assert (x != old_x).nnz == 0
+
+    print("success")
 
     # Todo: this should be in a function - do it 3 times
     y = []
