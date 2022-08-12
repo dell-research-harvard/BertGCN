@@ -246,8 +246,8 @@ def create_nodes(
     ty = np.array(ty)
 
 
-    assert (ty != new_ty).nnz == 0
     assert (tx != new_tx).nnz == 0
+    assert np.array_equal(ty, new_ty)
 
     print("success")
 
