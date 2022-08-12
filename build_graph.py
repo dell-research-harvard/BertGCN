@@ -312,7 +312,7 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, datase
     Calculate TF-IDF, for document-word edges 
     '''
 
-    print("Creating document-word edges...")
+    print("\n Creating document-word edges...")
 
     # dict of the number of times each word is used in entire corpus
     word_freq = {}
@@ -346,7 +346,6 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, datase
     for word, doc_list in word_doc_list.items():
         word_doc_freq[word] = len(doc_list)
 
-    print("8")
     # doc word frequency
     doc_word_freq = {}
     for doc_id in range(len(shuffle_doc_words_list)):
