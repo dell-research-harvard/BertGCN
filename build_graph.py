@@ -305,16 +305,29 @@ def create_node_vectors(
 
     print("Featurized matrix sizes:", x.shape, y.shape, tx.shape, ty.shape, allx.shape, ally.shape)
 
-    for dat in [x, y, tx, ty, allx, ally]:
+    f = open("data/ind.{}.x".format(dataset), 'wb')
+    pkl.dump(x, f)
+    f.close()
 
-        callers_local_vars = inspect.currentframe().f_back.f_locals.items()
-        string_name = [var_name for var_name, var_val in callers_local_vars if var_val is dat]
+    f = open("data/ind.{}.y".format(dataset), 'wb')
+    pkl.dump(y, f)
+    f.close()
 
-        print(string_name)
+    f = open("data/ind.{}.tx".format(dataset), 'wb')
+    pkl.dump(tx, f)
+    f.close()
 
-        f = open(f"data/ind.{dataset}.{string_name}", 'wb')
-        pkl.dump(dat, f)
-        f.close()
+    f = open("data/ind.{}.ty".format(dataset), 'wb')
+    pkl.dump(ty, f)
+    f.close()
+
+    f = open("data/ind.{}.allx".format(dataset), 'wb')
+    pkl.dump(allx, f)
+    f.close()
+
+    f = open("data/ind.{}.ally".format(dataset), 'wb')
+    pkl.dump(ally, f)
+    f.close()
 
 
 def create_edges(shuffle_doc_words_list, vocab, vocab_size, word_id_map, window_size, dataset):
