@@ -20,11 +20,7 @@ def load_and_shuffle_data(dataset):
     print("Opening and shuffling data...")
 
     # Check dataset
-    if len(sys.argv) != 2:
-        sys.exit("Use: python build_graph.py <dataset>")
-
     datasets = ['20ng', 'R8', 'R52', 'ohsumed', 'mr']
-
     if dataset not in datasets:
         sys.exit("wrong dataset name")
 
@@ -393,6 +389,7 @@ def create_edges(shuffle_doc_words_list, vocab, vocab_size, word_id_map, window_
 
     num_window = len(windows)
     train_size = len(train_ids)
+    test_size = len(test_ids)
 
     for key in word_pair_count:
         temp = key.split(',')
@@ -498,6 +495,8 @@ def create_edges(shuffle_doc_words_list, vocab, vocab_size, word_id_map, window_
 
 if __name__ == '__main__':
 
+    if len(sys.argv) != 2:
+        sys.exit("Use: python build_graph.py <dataset>")
     dataset_name = sys.argv[1]
 
     shuffle_doc_name_list, shuffle_doc_words_list, train_ids, test_ids = load_and_shuffle_data(dataset=dataset_name)
