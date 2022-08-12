@@ -195,18 +195,13 @@ def create_node_vectors(
 
     x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(real_train_size, word_embeddings_dim))
 
+    assert (x != old_x).nnz == 0
 
-    for i in range(old_x.toarray().shape[0]):
-        for j in range(old_x.toarray().shape[1]):
-            if old_x.toarray()[i][j] != x.toarray()[i][j]:
-                print("**************")
-                print(old_x.toarray()[i][j])
-                print("**")
-                print(x.toarray()[i][j])
-
-
-    assert np.array_equal(old_x, x)
-
+    # row_x = range(real_train_size) * word_embeddings_dim
+    # col_x = [[dim] * real_train_size for dim in range(word_embeddings_dim)]
+    # data_x = [0.0] * (real_train_size * word_embeddings_dim)
+    #
+    # newst_x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(real_train_size, word_embeddings_dim))
 
 
     # Todo: this should be in a function - do it 3 times
