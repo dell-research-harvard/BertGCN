@@ -299,6 +299,7 @@ def create_nodes(
 
     print(allx.shape)
     print(new_allx.shape)
+    print((allx != new_allx).nnz)
     assert (allx != new_allx).nnz == 0
 
     print("success")
