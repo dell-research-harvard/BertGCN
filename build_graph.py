@@ -116,7 +116,14 @@ def create_vocab_list(shuffle_doc_words_list, dataset):
     return vocab, word_id_map
 
 
-def node_matrix_creation(label_list, shuffle_doc_name_list, dataset, word_embeddings_dim, data_length, save_prefix):
+def node_matrix_creation(
+        label_list,
+        shuffle_doc_name_list,
+        dataset,
+        word_embeddings_dim,
+        data_length,
+        start_index = 0,
+        save_prefix = ""):
 
     # Create feature matrix, x,  for training docs. At the moment, we don't have any
     row_x = list(range(data_length)) * word_embeddings_dim
@@ -129,7 +136,7 @@ def node_matrix_creation(label_list, shuffle_doc_name_list, dataset, word_embedd
     # Create y, a sparse matrix of labels
     y = []
     for i in range(data_length):
-        doc_meta = shuffle_doc_name_list[i]
+        doc_meta = shuffle_doc_name_list[i + start_index]
         temp = doc_meta.split('\t')
         label = temp[2]
         one_hot = [0 for l in range(len(label_list))]
@@ -204,6 +211,7 @@ def create_nodes(
         dataset_name,
         word_embeddings_dim,
         data_length=len(test_ids),
+        start_index=len(train_ids),
         save_prefix="t"
     )
 
