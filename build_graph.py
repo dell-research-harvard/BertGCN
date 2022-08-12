@@ -122,8 +122,9 @@ def node_matrix_creation(
         dataset,
         word_embeddings_dim,
         data_length,
-        start_index = 0,
-        save_prefix = ""):
+        start_index=0,
+        add_vocab=False,
+        save_prefix=""):
 
     # Create feature matrix, x,  for training docs. At the moment, we don't have any
     row_x = list(range(data_length)) * word_embeddings_dim
@@ -143,6 +144,12 @@ def node_matrix_creation(
         label_index = label_list.index(label)
         one_hot[label_index] = 1
         y.append(one_hot)
+
+    if add_vocab:
+        for i in range(len(vocab)):
+            one_hot = [0 for l in range(len(label_list))]
+            y.append(one_hot)
+
     y = np.array(y)
 
     f = open(f"data/ind.{dataset}.{save_prefix}x", 'wb')
@@ -205,7 +212,7 @@ def create_nodes(
     )
 
     # Create and save node matrices for test data
-    new_tx, new_ty = node_matrix_creation(
+    tx, ty = node_matrix_creation(
         label_list,
         shuffle_doc_name_list,
         dataset_name,
@@ -215,50 +222,17 @@ def create_nodes(
         save_prefix="t"
     )
 
-    # tx: Do the same for the test data
-    test_size = len(test_ids)
-
-    # Todo: rewrite, as above
-    row_tx = []
-    col_tx = []
-    data_tx = []
-    for i in range(test_size):
-        doc_vec = np.array([0.0 for k in range(word_embeddings_dim)])
-        doc_words = shuffle_doc_words_list[i + train_size]
-        words = doc_words.split()
-        doc_len = len(words)
-        for word in words:
-            if word in word_vector_map:
-                word_vector = word_vector_map[word]
-                doc_vec = doc_vec + np.array(word_vector)
-
-        for j in range(word_embeddings_dim):
-            row_tx.append(i)
-            col_tx.append(j)
-            # np.random.uniform(-0.25, 0.25)
-            data_tx.append(doc_vec[j] / doc_len)  # doc_vec[j] / doc_len
-
-    # tx = sp.csr_matrix((test_size, word_embeddings_dim), dtype=np.float32)
-    tx = sp.csr_matrix((data_tx, (row_tx, col_tx)),
-                       shape=(test_size, word_embeddings_dim))
-
-    ty = []
-    for i in range(test_size):
-        doc_meta = shuffle_doc_name_list[i + train_size]
-        temp = doc_meta.split('\t')
-        label = temp[2]
-        one_hot = [0 for l in range(len(label_list))]
-        label_index = label_list.index(label)
-        one_hot[label_index] = 1
-        ty.append(one_hot)
-    ty = np.array(ty)
-
-
-    assert (tx != new_tx).nnz == 0
-    assert np.array_equal(ty, new_ty)
-
-    print("success")
-
+    # Create and save node matrices for train + eval data together
+    new_allx, new_ally = node_matrix_creation(
+        label_list,
+        shuffle_doc_name_list,
+        dataset_name,
+        word_embeddings_dim,
+        data_length=len(train_ids),
+        start_index=len(train_ids),
+        add_vocab=True,
+        save_prefix="all"
+    )
 
     # allx: do the same thing, but with the train and eval samples
     # (a superset of x)
@@ -320,6 +294,13 @@ def create_nodes(
         ally.append(one_hot)
 
     ally = np.array(ally)
+
+    assert np.array_equal(ally, new_ally)
+    assert (allx != new_allx).nnz == 0
+
+    print("success")
+
+
 
     print("Featurized matrix sizes:", x.shape, y.shape, tx.shape, ty.shape, allx.shape, ally.shape)
 
