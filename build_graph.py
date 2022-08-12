@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 def load_and_shuffle_data(dataset):
 
-    print("Opening and shuffling data...")
+    print("\n Opening and shuffling data...")
 
     # Check dataset
     datasets = ['20ng', 'R8', 'R52', 'ohsumed', 'mr']
@@ -117,7 +117,7 @@ def create_nodes(
         dataset
 ):
 
-    print("Creating node vectors...")
+    print("\n Creating node vectors...")
 
     # Create list of unique labels
     label_set = set()
@@ -234,7 +234,7 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, datase
     Calculate PMI, for word-word edges
     '''
 
-    print("Creating word-word edges...")
+    print("\n Creating word-word edges...")
 
     # Create list of sliding windows, moving by one word each time
     windows = []
@@ -293,7 +293,6 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, datase
     train_size = len(train_ids)
     test_size = len(test_ids)
 
-    print("4")
     for key in word_pair_count:
         temp = key.split(',')
         i = int(temp[0])
@@ -315,7 +314,6 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, datase
 
     print("Creating document-word edges...")
 
-    print("5")
     # dict of the number of times each word is used in entire corpus
     word_freq = {}
     for doc_words in shuffle_doc_words_list:
@@ -326,7 +324,6 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, datase
             else:
                 word_freq[word] = 1
 
-    print("6")
     # dictionary of words to list of ids of all texts that use that word
     word_doc_list = {}
     for i in range(len(shuffle_doc_words_list)):
@@ -344,7 +341,6 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, datase
                 word_doc_list[word] = [i]
             appeared.add(word)
 
-    print("7")
     # dictionary of words and number of texts that use that word
     word_doc_freq = {}
     for word, doc_list in word_doc_list.items():
@@ -364,7 +360,6 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, datase
             else:
                 doc_word_freq[doc_word_str] = 1
 
-    print("9")
     # Calculate TF_IDF
     for i in range(len(shuffle_doc_words_list)):
         doc_words = shuffle_doc_words_list[i]
@@ -387,7 +382,7 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, datase
             doc_word_set.add(word)
 
     '''
-    Put this all together in a graph and save  
+    Put this all together and save  
     '''
 
     node_size = train_size + len(vocab) + test_size
