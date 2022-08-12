@@ -188,6 +188,11 @@ def create_node_vectors(
 
     x = sp.csr_matrix((real_train_size, word_embeddings_dim), dtype=np.float32)
 
+    print("**** old_x ****")
+    print(old_x.toarray())
+    print("**** x ****")
+    print(x.toarray())
+
     assert np.array_equal(old_x, x)
 
     # Todo: this should be in a function - do it 3 times
