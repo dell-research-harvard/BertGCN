@@ -134,6 +134,8 @@ def node_matrix_creation(
 
     if add_vocab:
 
+        row_x = [int(i) for i in row_x]
+
         word_vectors = np.random.uniform(-0.01, 0.01, (len(vocab), word_embeddings_dim))
 
         for i in range(len(vocab)):
