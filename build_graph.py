@@ -132,7 +132,7 @@ def node_matrix_creation(label_list, shuffle_doc_name_list, dataset, word_embedd
         doc_meta = shuffle_doc_name_list[i]
         temp = doc_meta.split('\t')
         label = temp[2]
-        one_hot = [0 for l in range(len(data_length))]
+        one_hot = [0 for l in range(len(label_list))]
         label_index = label_list.index(label)
         one_hot[label_index] = 1
         y.append(one_hot)
@@ -149,7 +149,7 @@ def node_matrix_creation(label_list, shuffle_doc_name_list, dataset, word_embedd
     return x, y # Todo: get rid of this once checked
 
 
-def create_node_vectors(
+def create_nodes(
         shuffle_doc_name_list,
         shuffle_doc_words_list,
         train_ids,
@@ -509,7 +509,7 @@ if __name__ == '__main__':
 
     vocab, word_id_map = create_vocab_list(shuffle_doc_words_list, dataset=dataset_name)
 
-    create_node_vectors(
+    create_nodes(
         shuffle_doc_name_list,
         shuffle_doc_words_list,
         train_ids,
