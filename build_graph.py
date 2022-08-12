@@ -58,12 +58,7 @@ def load_and_shuffle_data(dataset):
         for split_name in splits[split]['names']:
             split_id = doc_name_list.index(split_name)
             splits[split]['ids'].append(split_id)
-
-        print(splits[split]['ids'][0])
         random.shuffle(splits[split]['ids'])
-        print(splits[split]['ids'][0])
-
-        # Todo: check that this does actually shuffle
 
         # # partial labeled data # Todo: look more into this
         # #train_ids = train_ids[:int(0.2 * len(train_ids))]
@@ -104,9 +99,8 @@ def create_vocab_list(shuffle_doc_words_list, dataset):
             word_set.add(word)
 
     vocab = list(word_set)
-    vocab_size = len(vocab)
 
-    print(f"Vocabulary size: {vocab_size}")
+    print(f"Vocabulary size: {len(vocab)}")
 
     vocab_str = '\n'.join(vocab)
 
@@ -114,12 +108,12 @@ def create_vocab_list(shuffle_doc_words_list, dataset):
     f.write(vocab_str)
     f.close()
 
-    # Dictionary dictionary mapping words to unique ids
+    # Dictionary mapping words to unique ids
     word_id_map = {}
-    for i in range(vocab_size):
+    for i in range(len(vocab)):
         word_id_map[vocab[i]] = i
 
-    return vocab, vocab_size, word_id_map
+    return vocab, word_id_map
 
 
 def create_node_vectors(
@@ -128,7 +122,7 @@ def create_node_vectors(
         train_ids,
         test_ids,
         word_embeddings_dim,
-        vocab_size,
+        vocab,
         dataset
 ):
 
@@ -152,7 +146,6 @@ def create_node_vectors(
     train_size = len(train_ids)
     val_size = int(0.1 * train_size)
     real_train_size = train_size - val_size  # - int(0.5 * train_size)
-    # different training rates
 
     real_train_doc_names = shuffle_doc_name_list[:real_train_size]
     real_train_doc_names_str = '\n'.join(real_train_doc_names)
@@ -161,6 +154,9 @@ def create_node_vectors(
     f.write(real_train_doc_names_str)
     f.close()
 
+    """
+    old code starts
+    """
     # Todo: replace with a one line (zeros) -> matrix of real_train_size word_embeddings_dim - can replace up to 264
     # Create feature matrix, x,  for training docs. At the moment, we don't have any
     # features so they're all intialised as zero
@@ -183,9 +179,16 @@ def create_node_vectors(
             # np.random.uniform(-0.25, 0.25)
             data_x.append(doc_vec[j] / doc_len)  # doc_vec[j]/ doc_len # Todo: just append 0.0
 
-    # x = sp.csr_matrix((real_train_size, word_embeddings_dim), dtype=np.float32)
-    x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(
+
+    old_x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(
         real_train_size, word_embeddings_dim))
+    """
+    old code ends
+    """
+
+    x = sp.csr_matrix((real_train_size, word_embeddings_dim), dtype=np.float32)
+
+    assert x == old_x
 
     # Todo: this should be in a function - do it 3 times
     y = []
@@ -259,8 +262,7 @@ def create_node_vectors(
             data_allx.append(doc_vec[j] / doc_len)  # doc_vec[j]/doc_len
 
     # Also add in the length of the vocab
-    word_vectors = np.random.uniform(-0.01, 0.01,
-                                     (vocab_size, word_embeddings_dim))
+    word_vectors = np.random.uniform(-0.01, 0.01, (len(vocab), word_embeddings_dim))
 
     # Todo: This does nothing - delete
     for i in range(len(vocab)):
@@ -270,7 +272,7 @@ def create_node_vectors(
             vector = word_vector_map[word]
             word_vectors[i] = vector
 
-    for i in range(vocab_size):
+    for i in range(len(vocab)):
         for j in range(word_embeddings_dim):
             row_allx.append(int(i + train_size))
             col_allx.append(j)
@@ -281,7 +283,7 @@ def create_node_vectors(
     data_allx = np.array(data_allx)
 
     allx = sp.csr_matrix(
-        (data_allx, (row_allx, col_allx)), shape=(train_size + vocab_size, word_embeddings_dim))
+        (data_allx, (row_allx, col_allx)), shape=(train_size + len(vocab), word_embeddings_dim))
 
     ally = []
     for i in range(train_size):
@@ -293,7 +295,7 @@ def create_node_vectors(
         one_hot[label_index] = 1
         ally.append(one_hot)
 
-    for i in range(vocab_size):
+    for i in range(len(vocab)):
         one_hot = [0 for l in range(len(label_list))]
         ally.append(one_hot)
 
@@ -326,7 +328,7 @@ def create_node_vectors(
     f.close()
 
 
-def create_edges(shuffle_doc_words_list, vocab, vocab_size, word_id_map, window_size, dataset):
+def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, dataset):
 
     '''
     Calculate PMI, for word-word edges
@@ -471,7 +473,7 @@ def create_edges(shuffle_doc_words_list, vocab, vocab_size, word_id_map, window_
             if i < train_size:
                 row.append(i)
             else:
-                row.append(i + vocab_size)
+                row.append(i + len(vocab))
             col.append(train_size + j)
             idf = log(1.0 * len(shuffle_doc_words_list) /
                       word_doc_freq[vocab[j]])
@@ -482,7 +484,7 @@ def create_edges(shuffle_doc_words_list, vocab, vocab_size, word_id_map, window_
     Put this all together in a graph and save  
     '''
 
-    node_size = train_size + vocab_size + test_size
+    node_size = train_size + len(vocab) + test_size
     adj = sp.csr_matrix(
         (weight, (row, col)), shape=(node_size, node_size))
 
@@ -501,7 +503,7 @@ if __name__ == '__main__':
 
     shuffle_doc_name_list, shuffle_doc_words_list, train_ids, test_ids = load_and_shuffle_data(dataset=dataset_name)
 
-    vocab, vocab_size, word_id_map = create_vocab_list(shuffle_doc_words_list, dataset=dataset_name)
+    vocab, word_id_map = create_vocab_list(shuffle_doc_words_list, dataset=dataset_name)
 
     create_node_vectors(
         shuffle_doc_name_list,
@@ -509,8 +511,8 @@ if __name__ == '__main__':
         train_ids,
         test_ids,
         word_embeddings_dim=300,
-        vocab_size=vocab_size,
+        vocab=vocab,
         dataset=dataset_name
     )
 
-    create_edges(shuffle_doc_words_list, vocab, vocab_size, word_id_map, window_size=20, dataset=dataset_name)
+    create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size=20, dataset=dataset_name)
