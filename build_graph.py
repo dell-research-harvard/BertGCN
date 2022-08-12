@@ -189,9 +189,9 @@ def create_node_vectors(
     x = sp.csr_matrix((real_train_size, word_embeddings_dim), dtype=np.float32)
 
     print("**** old_x ****")
-    print(old_x.toarray())
+    print(old_x.shape)
     print("**** x ****")
-    print(x.toarray())
+    print(x.shape)
 
     assert np.array_equal(old_x, x)
 
