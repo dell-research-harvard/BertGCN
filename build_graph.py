@@ -297,8 +297,8 @@ def create_nodes(
     allx = sp.csr_matrix(
         (data_allx, (row_allx, col_allx)), shape=(train_size + len(vocab), word_embeddings_dim))
 
-    print(allx.size)
-    print(new_allx.size)
+    print(allx.shape)
+    print(new_allx.shape)
     assert (allx != new_allx).nnz == 0
 
     print("success")
