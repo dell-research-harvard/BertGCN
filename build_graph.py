@@ -187,11 +187,10 @@ def create_node_vectors(
     """
 
     # x = sp.csr_matrix((real_train_size, word_embeddings_dim), dtype=np.float32)
-    x = sp.csr_matrix((real_train_size, word_embeddings_dim), dtype=np.complex)
+    # x = sp.csr_matrix((real_train_size, word_embeddings_dim), dtype=np.complex)
 
-    # M = np.zeros((real_train_size, word_embeddings_dim),dtype=complex)
-    # M = sp.bsr_matrix(M)
-
+    M = np.zeros((real_train_size, word_embeddings_dim), dtype=float32)
+    x = sp.csr_matrix(M)
 
     print(x)
 
