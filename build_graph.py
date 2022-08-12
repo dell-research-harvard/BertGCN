@@ -195,8 +195,8 @@ def create_node_vectors(
 
     for i in range(old_x.shape[0]):
         for j in range(old_x.shape[1]):
-            if old_x[i][j] != x[i][j]:
-                print(old_x[i][j], x[i][j])
+            # if old_x[i][j] != x[i][j]:
+            print(old_x[i][j], x[i][j])
 
     assert np.array_equal(old_x, x)
 
