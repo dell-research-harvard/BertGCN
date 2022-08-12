@@ -179,30 +179,25 @@ def create_node_vectors(
             # np.random.uniform(-0.25, 0.25)
             data_x.append(doc_vec[j] / doc_len)  # doc_vec[j]/ doc_len # Todo: just append 0.0
 
-
-    old_x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(
-        real_train_size, word_embeddings_dim))
+    old_x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(real_train_size, word_embeddings_dim))
     """
     old code ends
     """
 
-    # x = sp.csr_matrix((real_train_size, word_embeddings_dim), dtype=np.float32)
-    # x = sp.csr_matrix((real_train_size, word_embeddings_dim), dtype=np.complex)
+    row_x = []
+    col_x = []
+    data_x = []
+    for i in range(real_train_size):
+        for j in range(word_embeddings_dim):
+            row_x.append(i)
+            col_x.append(j)
+            data_x.append(0.0)  # doc_vec[j]/ doc_len # Todo: just append 0.0
 
-    M = np.zeros((real_train_size, word_embeddings_dim), dtype=np.float32)
-    x = sp.csr_matrix(M)
-
-    print(x)
-
-    # for i in range(old_x.shape[0]):
-    #     for j in range(old_x.shape[1]):
-    #         # if old_x[i][j] != x[i][j]:
-    #         print("**************")
-    #         print(old_x[i][j])
-    #         print("**")
-    #         print(x[i][j])
+    x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(real_train_size, word_embeddings_dim))
 
     assert np.array_equal(old_x, x)
+
+
 
     # Todo: this should be in a function - do it 3 times
     y = []
