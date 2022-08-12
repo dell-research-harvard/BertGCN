@@ -229,7 +229,6 @@ def create_nodes(
         dataset_name,
         word_embeddings_dim,
         data_length=len(train_ids),
-        start_index=len(train_ids),
         add_vocab=True,
         save_prefix="all"
     )
