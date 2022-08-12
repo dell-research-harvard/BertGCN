@@ -26,11 +26,7 @@ def load_and_shuffle_data(dataset):
 
     # Pull text ids, split (test/train) and label
     doc_name_list = []
-    splits = {'train':
-                  {'names': [], 'ids': []},
-              'test':
-                  {'names': [], 'ids': []}
-              }
+    splits = {'train': {'names': [], 'ids': []}, 'test': {'names': [], 'ids': []}}
 
     f = open('data/' + dataset + '.txt', 'r')
     lines = f.readlines()
@@ -62,7 +58,11 @@ def load_and_shuffle_data(dataset):
         for split_name in splits[split]['names']:
             split_id = doc_name_list.index(split_name)
             splits[split]['ids'].append(split_id)
+
+        print(splits[split]['ids'][0])
         random.shuffle(splits[split]['ids'])
+        print(splits[split]['ids'][0])
+
         # Todo: check that this does actually shuffle
 
         # # partial labeled data # Todo: look more into this
