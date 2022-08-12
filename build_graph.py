@@ -304,29 +304,11 @@ def create_node_vectors(
 
     print("Featurized matrix sizes:", x.shape, y.shape, tx.shape, ty.shape, allx.shape, ally.shape)
 
-    f = open("data/ind.{}.x".format(dataset), 'wb')
-    pkl.dump(x, f)
-    f.close()
-
-    f = open("data/ind.{}.y".format(dataset), 'wb')
-    pkl.dump(y, f)
-    f.close()
-
-    f = open("data/ind.{}.tx".format(dataset), 'wb')
-    pkl.dump(tx, f)
-    f.close()
-
-    f = open("data/ind.{}.ty".format(dataset), 'wb')
-    pkl.dump(ty, f)
-    f.close()
-
-    f = open("data/ind.{}.allx".format(dataset), 'wb')
-    pkl.dump(allx, f)
-    f.close()
-
-    f = open("data/ind.{}.ally".format(dataset), 'wb')
-    pkl.dump(ally, f)
-    f.close()
+    for dat in [x, y, tx, ty, allx, ally]:
+        string_name = f'{dat=}'.split('=')[0]
+        f = open(f"data/ind.{dataset}.{string_name}", 'wb')
+        pkl.dump(dat, f)
+        f.close()
 
 
 def create_edges(shuffle_doc_words_list, vocab, vocab_size, word_id_map, window_size, dataset):
@@ -391,6 +373,7 @@ def create_edges(shuffle_doc_words_list, vocab, vocab_size, word_id_map, window_
     weight = []
 
     num_window = len(windows)
+    train_size = len(train_ids)
 
     for key in word_pair_count:
         temp = key.split(',')
@@ -487,7 +470,7 @@ def create_edges(shuffle_doc_words_list, vocab, vocab_size, word_id_map, window_
     adj = sp.csr_matrix(
         (weight, (row, col)), shape=(node_size, node_size))
 
-    print(adj.toarray())
+    print("Weighted edge matrix size:", adj.shape)
 
     f = open("data/ind.{}.adj".format(dataset), 'wb')
     pkl.dump(adj, f)
