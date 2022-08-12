@@ -184,25 +184,24 @@ def create_node_vectors(
     old code ends
     """
 
-    row_x = []
-    col_x = []
-    data_x = []
-    for i in range(real_train_size):
-        for j in range(word_embeddings_dim):
-            row_x.append(i)
-            col_x.append(j)
-            data_x.append(0.0)
+    # row_x = []
+    # col_x = []
+    # data_x = []
+    # for i in range(real_train_size):
+    #     for j in range(word_embeddings_dim):
+    #         row_x.append(i)
+    #         col_x.append(j)
+    #         data_x.append(0.0)
+    #
+    # x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(real_train_size, word_embeddings_dim))
+
+    row_x = range(real_train_size) * word_embeddings_dim
+    col_x = [[dim] * real_train_size for dim in range(word_embeddings_dim)]
+    data_x = [0.0] * (real_train_size * word_embeddings_dim)
 
     x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(real_train_size, word_embeddings_dim))
 
     assert (x != old_x).nnz == 0
-
-    # row_x = range(real_train_size) * word_embeddings_dim
-    # col_x = [[dim] * real_train_size for dim in range(word_embeddings_dim)]
-    # data_x = [0.0] * (real_train_size * word_embeddings_dim)
-    #
-    # newst_x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(real_train_size, word_embeddings_dim))
-
 
     # Todo: this should be in a function - do it 3 times
     y = []
