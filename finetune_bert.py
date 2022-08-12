@@ -45,7 +45,6 @@ if __name__ == '__main__':
         ckpt_dir = checkpoint_dir
 
     os.makedirs(ckpt_dir, exist_ok=True)
-    print(os.path.basename(__file__))
     shutil.copy(os.path.basename(__file__), ckpt_dir)
 
     # Set up logging
@@ -60,14 +59,13 @@ if __name__ == '__main__':
     logger.addHandler(fh)
     logger.setLevel(logging.INFO)
 
+    logger.info('Arguments: {}'.format(str(args)))
+    logger.info('checkpoints will be saved in {}'.format(ckpt_dir))
+
     cpu = th.device('cpu')
     gpu = th.device('cuda:0')
 
-    logger.info('arguments:')
-    logger.info(str(args))
-    logger.info('checkpoints will be saved in {}'.format(ckpt_dir))
-
-    # Data Preprocess
+    # Load data
     adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, train_size, test_size = load_corpus(dataset)
     '''
     y_train, y_val, y_test: n*c matrices 

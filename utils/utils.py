@@ -34,7 +34,7 @@ def load_data(dataset_str):
     ind.dataset_str.ty => the one-hot labels of the test instances as numpy.ndarray object;
     ind.dataset_str.ally => the labels for instances in ind.dataset_str.allx as numpy.ndarray object;
     ind.dataset_str.graph => a dict in the format {index: [index_of_neighbor_nodes]} as collections.defaultdict
-        object;
+        object; # Todo: remove maybe?
     ind.dataset_str.test.index => the indices of test instances in graph, for the inductive setting as list object.
 
     All objects above must be saved using python pickle module.
@@ -50,6 +50,10 @@ def load_data(dataset_str):
                 objects.append(pkl.load(f, encoding='latin1'))
             else:
                 objects.append(pkl.load(f))
+
+    print("**************")
+    print(objects[6])
+    print("**************")
 
     x, y, tx, ty, allx, ally, graph = tuple(objects)
     test_idx_reorder = parse_index_file(
@@ -278,6 +282,7 @@ def loadWord2Vec(filename):
     print('Loaded Word Vectors!')
     file.close()
     return vocab, embd, word_vector_map
+
 
 def clean_str(string):
     """
