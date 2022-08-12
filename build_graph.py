@@ -195,9 +195,15 @@ def create_node_vectors(
     #
     # x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(real_train_size, word_embeddings_dim))
 
-    row_x = range(real_train_size) * word_embeddings_dim
-    col_x = [[dim] * real_train_size for dim in range(word_embeddings_dim)]
-    data_x = [0.0] * (real_train_size * word_embeddings_dim)
+    print(range(real_train_size))
+    print(type(range(real_train_size)))
+
+    myList = [1, 2, 3, 4, 5]
+    myList3 = myList * 3
+    print(myList3)
+
+    # col_x = [[dim] * real_train_size for dim in range(word_embeddings_dim)]
+    # data_x = [0.0] * (real_train_size * word_embeddings_dim)
 
     x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(real_train_size, word_embeddings_dim))
 
