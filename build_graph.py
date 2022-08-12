@@ -132,7 +132,24 @@ def node_matrix_creation(
     col_x = [x for l in tmp_col_x for x in l]
     data_x = [0.0] * (data_length * word_embeddings_dim)
 
-    x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(data_length, word_embeddings_dim))
+    if add_vocab:
+
+        word_vectors = np.random.uniform(-0.01, 0.01, (len(vocab), word_embeddings_dim))
+
+        for i in range(len(vocab)):
+            for j in range(word_embeddings_dim):
+                row_x.append(int(i + data_length))
+                col_x.append(j)
+                data_x.append(word_vectors.item((i, j)))
+
+        row_x = np.array(row_x)
+        col_x = np.array(col_x)
+        data_x = np.array(data_x)
+
+        x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(data_length + len(vocab), word_embeddings_dim))
+
+    else:
+        x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(data_length, word_embeddings_dim))
 
     # Create y, a sparse matrix of labels
     y = []
@@ -278,46 +295,11 @@ def create_nodes(
     allx = sp.csr_matrix(
         (data_allx, (row_allx, col_allx)), shape=(train_size + len(vocab), word_embeddings_dim))
 
-    ally = []
-    for i in range(train_size):
-        doc_meta = shuffle_doc_name_list[i]
-        temp = doc_meta.split('\t')
-        label = temp[2]
-        one_hot = [0 for l in range(len(label_list))]
-        label_index = label_list.index(label)
-        one_hot[label_index] = 1
-        ally.append(one_hot)
-
-    for i in range(len(vocab)):
-        one_hot = [0 for l in range(len(label_list))]
-        ally.append(one_hot)
-
-    ally = np.array(ally)
-
-    assert np.array_equal(ally, new_ally)
     assert (allx != new_allx).nnz == 0
 
     print("success")
 
-
-
     print("Featurized matrix sizes:", x.shape, y.shape, tx.shape, ty.shape, allx.shape, ally.shape)
-
-    f = open("data/ind.{}.tx".format(dataset), 'wb')
-    pkl.dump(tx, f)
-    f.close()
-
-    f = open("data/ind.{}.ty".format(dataset), 'wb')
-    pkl.dump(ty, f)
-    f.close()
-
-    f = open("data/ind.{}.allx".format(dataset), 'wb')
-    pkl.dump(allx, f)
-    f.close()
-
-    f = open("data/ind.{}.ally".format(dataset), 'wb')
-    pkl.dump(ally, f)
-    f.close()
 
 
 def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, dataset):
