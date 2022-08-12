@@ -198,7 +198,7 @@ def create_node_vectors(
 
     for i in range(old_x.toarray().shape[0]):
         for j in range(old_x.toarray().shape[1]):
-            if old_x[i][j] != x[i][j]:
+            if old_x.toarray()[i][j] != x.toarray()[i][j]:
                 print("**************")
                 print(old_x.toarray()[i][j])
                 print("**")
