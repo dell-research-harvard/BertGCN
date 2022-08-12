@@ -1,18 +1,9 @@
-import os
 import random
-import json
 import numpy as np
 import pickle as pkl
-import networkx as nx
 import scipy.sparse as sp
-from utils import loadWord2Vec, clean_str
 from math import log
-from sklearn import svm
-from nltk.corpus import wordnet as wn
-from sklearn.feature_extraction.text import TfidfVectorizer
 import sys
-from scipy.spatial.distance import cosine
-import inspect
 
 
 def load_and_shuffle_data(dataset):
@@ -116,74 +107,6 @@ def create_vocab_list(shuffle_doc_words_list, dataset):
     return vocab, word_id_map
 
 
-def node_matrix_creation(
-        label_list,
-        shuffle_doc_name_list,
-        dataset,
-        word_embeddings_dim,
-        data_length,
-        start_index=0,
-        add_vocab=False,
-        vocab_length=0,
-        save_prefix=""
-):
-
-    # Create feature matrix, x,  for training docs. At the moment, we don't have any
-    row_x = list(range(data_length)) * word_embeddings_dim
-    tmp_col_x = [[dim] * data_length for dim in range(word_embeddings_dim)]
-    col_x = [x for l in tmp_col_x for x in l]
-    data_x = [0.0] * (data_length * word_embeddings_dim)
-
-    if add_vocab:
-
-        row_x = [int(i) for i in row_x]
-
-        word_vectors = np.random.uniform(-0.01, 0.01, (vocab_length, word_embeddings_dim))
-
-        for i in range(vocab_length):
-            for j in range(word_embeddings_dim):
-                row_x.append(int(i + data_length))
-                col_x.append(j)
-                data_x.append(word_vectors.item((i, j)))
-
-        row_x = np.array(row_x)
-        col_x = np.array(col_x)
-        data_x = np.array(data_x)
-
-        x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(data_length + vocab_length, word_embeddings_dim))
-
-    else:
-        x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(data_length, word_embeddings_dim))
-
-    # Create y, a sparse matrix of labels
-    y = []
-    for i in range(data_length):
-        doc_meta = shuffle_doc_name_list[i + start_index]
-        temp = doc_meta.split('\t')
-        label = temp[2]
-        one_hot = [0 for l in range(len(label_list))]
-        label_index = label_list.index(label)
-        one_hot[label_index] = 1
-        y.append(one_hot)
-
-    if add_vocab:
-        for i in range(vocab_length):
-            one_hot = [0 for l in range(len(label_list))]
-            y.append(one_hot)
-
-    y = np.array(y)
-
-    print("Featurized matrix sizes:", x.shape, y.shape)
-
-    f = open(f"data/ind.{dataset}.{save_prefix}x", 'wb')
-    pkl.dump(x, f)
-    f.close()
-
-    f = open(f"data/ind.{dataset}.{save_prefix}y", 'wb')
-    pkl.dump(y, f)
-    f.close()
-
-
 def create_nodes(
         shuffle_doc_name_list,
         train_ids,
@@ -219,22 +142,77 @@ def create_nodes(
     f.write(real_train_doc_names_str)
     f.close()
 
+    def node_matrix_creation(
+            data_length,
+            start_index=0,
+            add_vocab=False,
+            vocab_length=0,
+            save_prefix=""
+    ):
+
+        # Create feature matrix, x,  for training docs. At the moment, we don't have any
+        row_x = list(range(data_length)) * word_embeddings_dim
+        tmp_col_x = [[dim] * data_length for dim in range(word_embeddings_dim)]
+        col_x = [x for l in tmp_col_x for x in l]
+        data_x = [0.0] * (data_length * word_embeddings_dim)
+
+        if add_vocab:
+
+            row_x = [int(i) for i in row_x]
+
+            word_vectors = np.random.uniform(-0.01, 0.01, (vocab_length, word_embeddings_dim))
+
+            for i in range(vocab_length):
+                for j in range(word_embeddings_dim):
+                    row_x.append(int(i + data_length))
+                    col_x.append(j)
+                    data_x.append(word_vectors.item((i, j)))
+
+            row_x = np.array(row_x)
+            col_x = np.array(col_x)
+            data_x = np.array(data_x)
+
+            x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(data_length + vocab_length, word_embeddings_dim))
+
+        else:
+            x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(data_length, word_embeddings_dim))
+
+        # Create y, a sparse matrix of labels
+        y = []
+        for i in range(data_length):
+            doc_meta = shuffle_doc_name_list[i + start_index]
+            temp = doc_meta.split('\t')
+            label = temp[2]
+            one_hot = [0 for l in range(len(label_list))]
+            label_index = label_list.index(label)
+            one_hot[label_index] = 1
+            y.append(one_hot)
+
+        if add_vocab:
+            for i in range(vocab_length):
+                one_hot = [0 for l in range(len(label_list))]
+                y.append(one_hot)
+
+        y = np.array(y)
+
+        print("Featurized matrix sizes:", x.shape, y.shape)
+
+        f = open(f"data/ind.{dataset}.{save_prefix}x", 'wb')
+        pkl.dump(x, f)
+        f.close()
+
+        f = open(f"data/ind.{dataset}.{save_prefix}y", 'wb')
+        pkl.dump(y, f)
+        f.close()
+
     # Create and save node matrices for training data
     node_matrix_creation(
-        label_list,
-        shuffle_doc_name_list,
-        dataset_name,
-        word_embeddings_dim,
         data_length=real_train_size,
         save_prefix=""
     )
 
     # Create and save node matrices for test data
     node_matrix_creation(
-        label_list,
-        shuffle_doc_name_list,
-        dataset_name,
-        word_embeddings_dim,
         data_length=len(test_ids),
         start_index=len(train_ids),
         save_prefix="t"
@@ -242,10 +220,6 @@ def create_nodes(
 
     # Create and save node matrices for train + eval data + vocab together
     node_matrix_creation(
-        label_list,
-        shuffle_doc_name_list,
-        dataset_name,
-        word_embeddings_dim,
         data_length=len(train_ids),
         add_vocab=True,
         vocab_length=len(vocab),
