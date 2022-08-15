@@ -18,11 +18,9 @@ def parse_index_file(filename):
 def sample_mask(idx, length):
     """
     Create mask.
-    V
     """
     mask = np.zeros(length)    # array([ 0.,  0.,  0.,  0., ... , 0.])
-    mask[idx] = 1
-    print(mask)
+    mask[idx] = 1              # Fill with 1 in the indices indicated in the idx list
     return np.array(mask, dtype=np.bool)
 
 
@@ -136,7 +134,17 @@ def load_corpus(dataset_str):
     All objects above must be saved using python pickle module.
 
     :param dataset_str: Dataset name
-    :return: All data input files loaded (as well the training/test data).
+    :return:
+    - adj:
+    - features: allx and tx vertically stacked, in lil format
+    - y_train:
+    - y_val:
+    - y_test:
+    - train_mask: vector of length train+val+test, where 0:len(train) = 1, 0 otherwise
+    - val_mask: vector of length train+val+test, where len(train):len(train) + len(val) = 1, 0 otherwise
+    - test_mask: vector of length train+val+test, where len(train) + len(val):end = 1, 0 otherwise
+    - train_size: length of train data (inc eval)
+    - test_size: length of test data
     """
 
     names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'adj']
@@ -173,6 +181,8 @@ def load_corpus(dataset_str):
     y_train = np.zeros(labels.shape)
     y_val = np.zeros(labels.shape)
     y_test = np.zeros(labels.shape)
+
+    print(y_train.shape)
     y_train[train_mask, :] = labels[train_mask, :]
     y_val[val_mask, :] = labels[val_mask, :]
     y_test[test_mask, :] = labels[test_mask, :]
