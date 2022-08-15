@@ -184,7 +184,7 @@ def load_corpus(dataset_str):
     y_train[train_mask, :] = labels[train_mask, :]
     y_val[val_mask, :] = labels[val_mask, :]
     y_test[test_mask, :] = labels[test_mask, :]
-    print(y_train)
+    print(y_test)
 
     adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
 
