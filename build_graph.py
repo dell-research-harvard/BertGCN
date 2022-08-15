@@ -388,6 +388,9 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, datase
     adj = sp.csr_matrix(
         (weight, (row, col)), shape=(node_size, node_size))
 
+    # Make symmetric across main diagonal, by taking largest value
+    adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
+
     print("Weighted edge matrix size:", adj.shape)
 
     f = open("data/ind.{}.adj".format(dataset), 'wb')
