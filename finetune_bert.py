@@ -114,9 +114,6 @@ def load_data(dataset, logger):
 
 def tokenize_data(text, count, label_dict):
 
-    print(text)
-    print(len(text))
-
     # Tokenize documents
     def encode_input(text, tokenizer):
         input = tokenizer(text, max_length=max_length, truncation=True, padding=True, return_tensors='pt')
@@ -142,7 +139,7 @@ def tokenize_data(text, count, label_dict):
         datasets[split] = Data.TensorDataset(input_ids[split], attention_mask[split], label_dict[split])
         loader[split] = Data.DataLoader(datasets[split], batch_size=batch_size, shuffle=True)
 
-    return datasets
+    return datasets, loader
 
 
 if __name__ == '__main__':
@@ -155,7 +152,7 @@ if __name__ == '__main__':
 
     model = BertClassifier(pretrained_model=bert_init, nb_class=count_dict['classes'])
 
-    datasets = tokenize_data(text, count_dict, label_dict)
+    datasets, loader = tokenize_data(text, count_dict, label_dict)
 
     print("got to here")
 
