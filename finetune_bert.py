@@ -1,14 +1,10 @@
 import torch as th
-from transformers import AutoModel, AutoTokenizer
 import torch.nn.functional as F
 from utils import *
-import dgl
 import torch.utils.data as Data
 from ignite.engine import Events, create_supervised_evaluator, create_supervised_trainer, Engine
 from ignite.metrics import Accuracy, Loss
-import numpy as np
 import os
-from datetime import datetime
 from sklearn.metrics import accuracy_score
 import argparse, shutil, logging
 from torch.optim import lr_scheduler
@@ -75,6 +71,8 @@ def set_up_logging(ckpt_dir, args):
 
 def load_data(dataset, logger):
 
+    # Todo: might want to simplify some of this into the load_data function
+
     # Load data
     _, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, _, _ = load_corpus(dataset)
     '''
@@ -101,6 +99,8 @@ def load_data(dataset, logger):
         'val': y[count['train nodes']:count['train nodes'] + count['val nodes']],
         'test': y[-count['test nodes']:]
     }
+
+    print(label_dict['train'])
 
     # load documents
     corpus_file = './data/corpus/'+dataset+'_shuffle.txt'
@@ -155,7 +155,7 @@ if __name__ == '__main__':
 
     model = BertClassifier(pretrained_model=bert_init, nb_class=count_dict['classes'])
 
-    datasets = tokenize_data(model, count_dict, label_dict)
+    datasets = tokenize_data(text, count_dict, label_dict)
 
     print("got to here")
 

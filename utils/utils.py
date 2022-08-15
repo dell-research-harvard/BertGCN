@@ -63,11 +63,9 @@ def load_corpus(dataset_str):
                 objects.append(pkl.load(f))
 
     x, y, tx, ty, allx, ally, adj = tuple(objects)
-    print(x.shape, y.shape, tx.shape, ty.shape, allx.shape, ally.shape)
 
     features = sp.vstack((allx, tx)).tolil()       # Stack sparse matrices vertically (row wise)
     labels = np.vstack((ally, ty))                 # .tolil() converts to list of lists
-    print("Number of labels", len(labels))
 
     train_idx_orig = parse_index_file(
         "data/{}.train.index".format(dataset_str))
