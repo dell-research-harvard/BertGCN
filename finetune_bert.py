@@ -66,21 +66,22 @@ if __name__ == '__main__':
     gpu = th.device('cuda:0')
 
     # Load data
-    adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, _, _ = load_corpus(dataset)
+    _, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, _, _ = load_corpus(dataset)
     '''
     y_train, y_val, y_test: n*c matrices (np.arrays)
     train_mask, val_mask, test_mask: n-d bool array
     '''
 
     # compute number of real train/val/test/word nodes and number of classes
-    nb_node = adj.shape[0]
-
-    print(nb_node)
-    print(features.shape)
-
+    nb_node = features.shape[0]
     nb_train, nb_val, nb_test = train_mask.sum(), val_mask.sum(), test_mask.sum()
     nb_word = nb_node - nb_train - nb_val - nb_test
     nb_class = y_train.shape[1]
+
+    print(f'{nb_node} nodes of which {nb_word} are words and {nb_train + nb_val + nb_test} are documents')
+    print(f'Of {nb_train + nb_val + nb_test} document nodes {nb_train} are training, {nb_val} are evaluation and {nb_test} are test')
+    print(f'{nb_class} label classes')
+
 
     # instantiate model according to class number
     model = BertClassifier(pretrained_model=bert_init, nb_class=nb_class)
