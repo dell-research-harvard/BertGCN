@@ -73,7 +73,7 @@ def set_up_logging(ckpt_dir, args):
     return logger, cpu, gpu
 
 
-def load_data(dataset):
+def load_data(dataset, logger):
 
     # Load data
     _, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, _, _ = load_corpus(dataset)
