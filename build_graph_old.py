@@ -522,4 +522,14 @@ f = open("data/ind.{}.adj".format(dataset), 'wb')
 pkl.dump(adj, f)
 f.close()
 
-print(adj.toarray())
+print(adj.size)
+
+data = [0.0] * (node_size * node_size)
+new_adj = sp.csr_matrix((data, (row, col)), shape=(node_size, node_size))
+
+print((adj != new_adj).nnz)
+
+assert (adj != new_adj).nnz == 0
+
+
+
