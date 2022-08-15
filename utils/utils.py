@@ -181,11 +181,10 @@ def load_corpus(dataset_str):
     y_train = np.zeros(labels.shape)
     y_val = np.zeros(labels.shape)
     y_test = np.zeros(labels.shape)
-
-    print(y_train.shape)
     y_train[train_mask, :] = labels[train_mask, :]
     y_val[val_mask, :] = labels[val_mask, :]
     y_test[test_mask, :] = labels[test_mask, :]
+    print(y_train)
 
     adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
 
