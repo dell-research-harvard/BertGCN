@@ -73,11 +73,7 @@ def set_up_logging(ckpt_dir, args):
     return logger, cpu, gpu
 
 
-if __name__ == '__main__':
-
-    max_length, batch_size, nb_epochs, bert_lr, dataset, bert_init, ckpt_dir, args = load_parameters()
-
-    logger, cpu, gpu = set_up_logging(ckpt_dir, args)
+def load_data(dataset):
 
     # Load data
     _, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, _, _ = load_corpus(dataset)
@@ -87,19 +83,24 @@ if __name__ == '__main__':
     '''
 
     # compute number of real train/val/test/word nodes and number of classes
-    nb_node = features.shape[0]
-    nb_train, nb_val, nb_test = train_mask.sum(), val_mask.sum(), test_mask.sum()
-    nb_word = nb_node - nb_train - nb_val - nb_test
-    nb_class = y_train.shape[1]
+    count = {
+        'total nodes': features.shape[0],
+        'train nodes': train_mask.sum(),
+        'val nodes': val_mask.sum(),
+        'test nodes': test_mask.sum()
+    }
+    count['word nodes'] = count['nodes'] - count['train'] - count['val'] - count['test']
+    count['classes'] = y_train.shape[1]
 
-    logger.info(f'{nb_node} nodes of which {nb_word} are words and {nb_train + nb_val + nb_test} are documents')
-    logger.info(f'Of {nb_train + nb_val + nb_test} document nodes {nb_train} are training, {nb_val} are evaluation and {nb_test} are test')
-    logger.info(f'{nb_class} label classes')
+    print(count)
 
     # transform one-hot label to class ID for pytorch computation
     y = th.LongTensor((y_train + y_val + y_test).argmax(axis=1))
-    label = {}
-    label['train'], label['val'], label['test'] = y[:nb_train], y[nb_train:nb_train+nb_val], y[-nb_test:]
+    label_dict = {}
+    label_dict['train'], label_dict['val'], label_dict['test'] = \
+        y[:count['train nodes']], \
+        y[count['train nodes']:count['train nodes']+count['val nodes']], \
+        y[-count['test nodes']:]
 
     # load documents
     corpus_file = './data/corpus/'+dataset+'_shuffle.txt'
@@ -108,11 +109,12 @@ if __name__ == '__main__':
         text = text.replace('\\', '')
         text = text.split('\n')
 
+    return text, count, label_dict
+
+
+def tokenize_data(text, count, label_dict):
+
     # Tokenize documents
-
-    # instantiate model according to class number
-    model = BertClassifier(pretrained_model=bert_init, nb_class=nb_class)
-
     def encode_input(text, tokenizer):
         input = tokenizer(text, max_length=max_length, truncation=True, padding=True, return_tensors='pt')
         return input.input_ids, input.attention_mask
@@ -122,14 +124,37 @@ if __name__ == '__main__':
     input_ids_, attention_mask_ = encode_input(text, model.tokenizer)
 
     # create train/test/val datasets and dataloaders
-    input_ids['train'], input_ids['val'], input_ids['test'] = input_ids_[:nb_train], input_ids_[nb_train:nb_train+nb_val], input_ids_[-nb_test:]
-    attention_mask['train'], attention_mask['val'], attention_mask['test'] = attention_mask_[:nb_train], attention_mask_[nb_train:nb_train+nb_val], attention_mask_[-nb_test:]
+    input_ids['train'], input_ids['val'], input_ids['test'] = \
+        input_ids_[:count['train nodes']], \
+        input_ids_[count['train nodes']:count['train nodes']+count['val nodes']], \
+        input_ids_[-count['test nodes']:]
+    attention_mask['train'], attention_mask['val'], attention_mask['test'] = \
+        attention_mask_[:count['train nodes']], \
+        attention_mask_[count['train nodes']:count['train nodes']+count['val nodes']], \
+        attention_mask_[-count['test nodes']:]
 
     datasets = {}
     loader = {}
     for split in ['train', 'val', 'test']:
-        datasets[split] = Data.TensorDataset(input_ids[split], attention_mask[split], label[split])
+        datasets[split] = Data.TensorDataset(input_ids[split], attention_mask[split], label_dict[split])
         loader[split] = Data.DataLoader(datasets[split], batch_size=batch_size, shuffle=True)
+
+    return datasets
+
+
+if __name__ == '__main__':
+
+    max_length, batch_size, nb_epochs, bert_lr, dataset, bert_init, ckpt_dir, args = load_parameters()
+
+    logger, cpu, gpu = set_up_logging(ckpt_dir, args)
+
+    text, count_dict, label_dict = load_data(dataset)
+
+    model = BertClassifier(pretrained_model=bert_init, nb_class=count_dict['classes'])
+
+    datasets = tokenize_data(model, count_dict, label_dict)
+
+    print("got to here")
 
     # Training
     optimizer = th.optim.Adam(model.parameters(), lr=bert_lr)
