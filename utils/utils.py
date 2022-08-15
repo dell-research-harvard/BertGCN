@@ -34,7 +34,7 @@ def load_data(dataset_str):
     ind.dataset_str.ty => the one-hot labels of the test instances as numpy.ndarray object;
     ind.dataset_str.ally => the labels for instances in ind.dataset_str.allx as numpy.ndarray object;
     ind.dataset_str.graph => a dict in the format {index: [index_of_neighbor_nodes]} as collections.defaultdict
-        object; # Todo: remove maybe?
+        object;
     ind.dataset_str.test.index => the indices of test instances in graph, for the inductive setting as list object.
 
     All objects above must be saved using python pickle module.
@@ -50,10 +50,6 @@ def load_data(dataset_str):
                 objects.append(pkl.load(f, encoding='latin1'))
             else:
                 objects.append(pkl.load(f))
-
-    print("**************")
-    print(objects[6])
-    print("**************")
 
     x, y, tx, ty, allx, ally, graph = tuple(objects)
     test_idx_reorder = parse_index_file(
@@ -151,9 +147,12 @@ def load_corpus(dataset_str):
     x, y, tx, ty, allx, ally, adj = tuple(objects)
     print(x.shape, y.shape, tx.shape, ty.shape, allx.shape, ally.shape)
 
-    features = sp.vstack((allx, tx)).tolil()
-    labels = np.vstack((ally, ty))
-    print(len(labels))
+    features = sp.vstack((allx, tx)).tolil()       # Stack sparse matrices vertically (row wise)
+    labels = np.vstack((ally, ty))                 # .tolil() converts to list of lists
+    print("Number of labels", len(labels))
+    print(type(allx))
+    print(type(features))
+    print(type(labels))
 
     train_idx_orig = parse_index_file(
         "data/{}.train.index".format(dataset_str))

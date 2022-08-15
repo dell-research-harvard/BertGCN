@@ -66,7 +66,7 @@ if __name__ == '__main__':
     gpu = th.device('cuda:0')
 
     # Load data
-    adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, train_size, test_size = load_corpus(dataset)
+    adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, _, _ = load_corpus(dataset)
     '''
     y_train, y_val, y_test: n*c matrices 
     train_mask, val_mask, test_mask: n-d bool array
