@@ -524,7 +524,7 @@ f.close()
 
 print(adj.size)
 
-data = [0.0] * (node_size * node_size)
+data = [0.0] * (len(row))
 new_adj = sp.csr_matrix((data, (row, col)), shape=(node_size, node_size))
 
 print((adj != new_adj).nnz)
