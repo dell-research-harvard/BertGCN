@@ -15,7 +15,7 @@ from torch.optim import lr_scheduler
 from model import BertClassifier
 
 
-if __name__ == '__main__':
+def load_parameters():
 
     # Parameters
     parser = argparse.ArgumentParser()
@@ -47,6 +47,11 @@ if __name__ == '__main__':
     os.makedirs(ckpt_dir, exist_ok=True)
     shutil.copy(os.path.basename(__file__), ckpt_dir)
 
+    return max_length, batch_size, nb_epochs, bert_lr, dataset, bert_init, ckpt_dir, args
+
+
+def set_up_logging(ckpt_dir, args):
+
     # Set up logging
     sh = logging.StreamHandler(sys.stdout)
     sh.setFormatter(logging.Formatter('%(message)s'))
@@ -65,6 +70,15 @@ if __name__ == '__main__':
     cpu = th.device('cpu')
     gpu = th.device('cuda:0')
 
+    return logger, cpu, gpu
+
+
+if __name__ == '__main__':
+
+    max_length, batch_size, nb_epochs, bert_lr, dataset, bert_init, ckpt_dir, args = load_parameters()
+
+    logger, cpu, gpu = set_up_logging(ckpt_dir, args)
+
     # Load data
     _, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, _, _ = load_corpus(dataset)
     '''
@@ -78,25 +92,26 @@ if __name__ == '__main__':
     nb_word = nb_node - nb_train - nb_val - nb_test
     nb_class = y_train.shape[1]
 
-    print(f'{nb_node} nodes of which {nb_word} are words and {nb_train + nb_val + nb_test} are documents')
-    print(f'Of {nb_train + nb_val + nb_test} document nodes {nb_train} are training, {nb_val} are evaluation and {nb_test} are test')
-    print(f'{nb_class} label classes')
-
-
-    # instantiate model according to class number
-    model = BertClassifier(pretrained_model=bert_init, nb_class=nb_class)
+    logger.info(f'{nb_node} nodes of which {nb_word} are words and {nb_train + nb_val + nb_test} are documents')
+    logger.info(f'Of {nb_train + nb_val + nb_test} document nodes {nb_train} are training, {nb_val} are evaluation and {nb_test} are test')
+    logger.info(f'{nb_class} label classes')
 
     # transform one-hot label to class ID for pytorch computation
-    y = th.LongTensor((y_train + y_val +y_test).argmax(axis=1))
+    y = th.LongTensor((y_train + y_val + y_test).argmax(axis=1))
     label = {}
     label['train'], label['val'], label['test'] = y[:nb_train], y[nb_train:nb_train+nb_val], y[-nb_test:]
 
-    # load documents and compute input encodings
+    # load documents
     corpus_file = './data/corpus/'+dataset+'_shuffle.txt'
     with open(corpus_file, 'r') as f:
         text = f.read()
-        text=text.replace('\\', '')
+        text = text.replace('\\', '')
         text = text.split('\n')
+
+    # Tokenize documents
+
+    # instantiate model according to class number
+    model = BertClassifier(pretrained_model=bert_init, nb_class=nb_class)
 
     def encode_input(text, tokenizer):
         input = tokenizer(text, max_length=max_length, truncation=True, padding=True, return_tensors='pt')
@@ -107,21 +122,18 @@ if __name__ == '__main__':
     input_ids_, attention_mask_ = encode_input(text, model.tokenizer)
 
     # create train/test/val datasets and dataloaders
-    input_ids['train'], input_ids['val'], input_ids['test'] =  input_ids_[:nb_train], input_ids_[nb_train:nb_train+nb_val], input_ids_[-nb_test:]
-    attention_mask['train'], attention_mask['val'], attention_mask['test'] =  attention_mask_[:nb_train], attention_mask_[nb_train:nb_train+nb_val], attention_mask_[-nb_test:]
+    input_ids['train'], input_ids['val'], input_ids['test'] = input_ids_[:nb_train], input_ids_[nb_train:nb_train+nb_val], input_ids_[-nb_test:]
+    attention_mask['train'], attention_mask['val'], attention_mask['test'] = attention_mask_[:nb_train], attention_mask_[nb_train:nb_train+nb_val], attention_mask_[-nb_test:]
 
     datasets = {}
     loader = {}
     for split in ['train', 'val', 'test']:
-        datasets[split] =  Data.TensorDataset(input_ids[split], attention_mask[split], label[split])
+        datasets[split] = Data.TensorDataset(input_ids[split], attention_mask[split], label[split])
         loader[split] = Data.DataLoader(datasets[split], batch_size=batch_size, shuffle=True)
 
-
     # Training
-
     optimizer = th.optim.Adam(model.parameters(), lr=bert_lr)
     scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[30], gamma=0.1)
-
 
     def train_step(engine, batch):
         global model, optimizer
@@ -197,7 +209,6 @@ if __name__ == '__main__':
             )
             log_training_results.best_val_acc = val_acc
         scheduler.step()
-
 
     log_training_results.best_val_acc = 0
     trainer.run(loader['train'], max_epochs=nb_epochs)
