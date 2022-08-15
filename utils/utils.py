@@ -39,7 +39,7 @@ def load_corpus(dataset_str):
 
     :param dataset_str: Dataset name
     :return:
-    - adj:
+    - adj: adj (unchanged)
     - features: allx and tx vertically stacked, in lil format
     - y_train: np.array of length=train+val+test and width=n labels, with 1 if train data y is label x, 0 otherwise
     - y_val: np.array of length=train+val+test and width=n labels, with 1 if val data y is label x, 0 otherwise

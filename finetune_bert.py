@@ -68,13 +68,16 @@ if __name__ == '__main__':
     # Load data
     adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, _, _ = load_corpus(dataset)
     '''
-    y_train, y_val, y_test: n*c matrices 
+    y_train, y_val, y_test: n*c matrices (np.arrays)
     train_mask, val_mask, test_mask: n-d bool array
-    train_size, test_size: unused
     '''
 
     # compute number of real train/val/test/word nodes and number of classes
     nb_node = adj.shape[0]
+
+    print(nb_node)
+    print(features.size)
+
     nb_train, nb_val, nb_test = train_mask.sum(), val_mask.sum(), test_mask.sum()
     nb_word = nb_node - nb_train - nb_val - nb_test
     nb_class = y_train.shape[1]
