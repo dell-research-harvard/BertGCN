@@ -76,7 +76,7 @@ if __name__ == '__main__':
     nb_node = adj.shape[0]
 
     print(nb_node)
-    print(features.size)
+    print(features.shape)
 
     nb_train, nb_val, nb_test = train_mask.sum(), val_mask.sum(), test_mask.sum()
     nb_word = nb_node - nb_train - nb_val - nb_test
