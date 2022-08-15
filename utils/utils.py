@@ -184,11 +184,11 @@ def load_corpus(dataset_str):
     y_train[train_mask, :] = labels[train_mask, :]
     y_val[val_mask, :] = labels[val_mask, :]
     y_test[test_mask, :] = labels[test_mask, :]
-    print(y_test)
 
     # Make symmetric across main diagonal, by taking largest value
     print(adj.toarray())
     adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
+    print("***")
     print(adj.toarray())
 
     return adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, train_size, test_size
