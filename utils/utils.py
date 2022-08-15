@@ -15,10 +15,14 @@ def parse_index_file(filename):
     return index
 
 
-def sample_mask(idx, l):
-    """Create mask."""
-    mask = np.zeros(l)
+def sample_mask(idx, length):
+    """
+    Create mask.
+    V
+    """
+    mask = np.zeros(length)    # array([ 0.,  0.,  0.,  0., ... , 0.])
     mask[idx] = 1
+    print(mask)
     return np.array(mask, dtype=np.bool)
 
 
@@ -150,9 +154,6 @@ def load_corpus(dataset_str):
     features = sp.vstack((allx, tx)).tolil()       # Stack sparse matrices vertically (row wise)
     labels = np.vstack((ally, ty))                 # .tolil() converts to list of lists
     print("Number of labels", len(labels))
-    print(type(allx))
-    print(type(features))
-    print(type(labels))
 
     train_idx_orig = parse_index_file(
         "data/{}.train.index".format(dataset_str))
