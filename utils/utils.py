@@ -137,9 +137,9 @@ def load_corpus(dataset_str):
     :return:
     - adj:
     - features: allx and tx vertically stacked, in lil format
-    - y_train:
-    - y_val:
-    - y_test:
+    - y_train: np.array of length=train+val+test and width=n labels, with 1 if train data y is label x, 0 otherwise
+    - y_val: np.array of length=train+val+test and width=n labels, with 1 if val data y is label x, 0 otherwise
+    - y_test: np.array of length=train+val+test and width=n labels, with 1 if test data y is label x, 0 otherwise
     - train_mask: vector of length train+val+test, where 0:len(train) = 1, 0 otherwise
     - val_mask: vector of length train+val+test, where len(train):len(train) + len(val) = 1, 0 otherwise
     - test_mask: vector of length train+val+test, where len(train) + len(val):end = 1, 0 otherwise
@@ -186,7 +186,10 @@ def load_corpus(dataset_str):
     y_test[test_mask, :] = labels[test_mask, :]
     print(y_test)
 
+    # Make symmetric across main diagonal, by taking largest value
+    print(adj.toarray())
     adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
+    print(adj.toarray())
 
     return adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, train_size, test_size
 
