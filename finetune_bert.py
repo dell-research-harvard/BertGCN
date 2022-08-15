@@ -89,7 +89,7 @@ def load_data(dataset):
         'val nodes': val_mask.sum(),
         'test nodes': test_mask.sum()
     }
-    count['word nodes'] = count['nodes'] - count['train'] - count['val'] - count['test']
+    count['word nodes'] = count['total nodes'] - count['train nodes'] - count['val nodes'] - count['test nodes']
     count['classes'] = y_train.shape[1]
 
     print(count)
