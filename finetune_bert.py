@@ -92,15 +92,15 @@ def load_data(dataset):
     count['word nodes'] = count['total nodes'] - count['train nodes'] - count['val nodes'] - count['test nodes']
     count['classes'] = y_train.shape[1]
 
-    print(count)
+    logger.info('Data: {}'.format(str(count)))
 
     # transform one-hot label to class ID for pytorch computation
     y = th.LongTensor((y_train + y_val + y_test).argmax(axis=1))
-    label_dict = {}
-    label_dict['train'], label_dict['val'], label_dict['test'] = \
-        y[:count['train nodes']], \
-        y[count['train nodes']:count['train nodes']+count['val nodes']], \
-        y[-count['test nodes']:]
+    label_dict = {
+        'train': y[:count['train nodes']],
+        'val': y[count['train nodes']:count['train nodes'] + count['val nodes']],
+        'test': y[-count['test nodes']:]
+    }
 
     # load documents
     corpus_file = './data/corpus/'+dataset+'_shuffle.txt'
@@ -113,6 +113,9 @@ def load_data(dataset):
 
 
 def tokenize_data(text, count, label_dict):
+
+    print(text)
+    print(len(text))
 
     # Tokenize documents
     def encode_input(text, tokenizer):
@@ -148,7 +151,7 @@ if __name__ == '__main__':
 
     logger, cpu, gpu = set_up_logging(ckpt_dir, args)
 
-    text, count_dict, label_dict = load_data(dataset)
+    text, count_dict, label_dict = load_data(dataset, logger)
 
     model = BertClassifier(pretrained_model=bert_init, nb_class=count_dict['classes'])
 
