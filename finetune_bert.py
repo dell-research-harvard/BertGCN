@@ -152,6 +152,8 @@ def train_step(engine, batch):
 
     global model, optimizer
 
+    print("x")
+
     model.train()
 
     model = model.to(gpu)
@@ -251,8 +253,6 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs):
         scheduler.step()
 
     log_training_results.best_val_acc = 0
-
-    print("More training ...")
 
     trainer.run(data_loader['train'], max_epochs=nb_epochs)
 
