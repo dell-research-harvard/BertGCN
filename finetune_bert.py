@@ -201,6 +201,8 @@ def test_step(engine, batch):
 
 def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs):
 
+    print("Training ...")
+
     # Training
     optimizer = th.optim.Adam(model.parameters(), lr=bert_lr)
     scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[30], gamma=0.1)
