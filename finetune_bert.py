@@ -152,8 +152,6 @@ def train_step(engine, batch):
 
     global model, optimizer
 
-    print("x")
-
     model.train()
 
     model = model.to(gpu)
@@ -263,10 +261,9 @@ if __name__ == '__main__':
     text, count_dict, label_dict = load_data(dataset, logger)
 
     model = BertClassifier(pretrained_model=bert_init, nb_class=count_dict['classes'])
-
-    data_loader = tokenize_data(text, count_dict, label_dict, model, max_length)
-
     optimizer = th.optim.Adam(model.parameters(), lr=bert_lr)
     scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[30], gamma=0.1)
+
+    data_loader = tokenize_data(text, count_dict, label_dict, model, max_length)
 
     train(data_loader, model, bert_lr, ckpt_dir, nb_epochs)
