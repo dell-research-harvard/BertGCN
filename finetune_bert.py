@@ -67,7 +67,7 @@ def set_up_logging(ckpt_dir, args):
     logger.setLevel(logging.INFO)
 
     logger.info('Arguments: {}'.format(str(args)))
-    logger.info('checkpoints will be saved in {}'.format(ckpt_dir))
+    logger.info('Checkpoints will be saved in {}'.format(ckpt_dir))
 
     cpu = th.device('cpu')
     gpu = th.device('cuda:0')
@@ -117,6 +117,8 @@ def load_data(dataset, logger):
 
 
 def tokenize_data(text, count, label_dict, model, max_length):
+
+    print("Tokenizing data ...")
 
     # Tokenize documents
     def encode_input(text, tokenizer):
