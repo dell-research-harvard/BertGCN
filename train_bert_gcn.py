@@ -136,7 +136,7 @@ def tokenize_data(text, model):
     attention_mask = th.cat(
         [attention_mask[:-count['test nodes']],
          th.zeros((count['word nodes'], max_length), dtype=th.long),
-         attention_mask[-count['nb_test']:]])
+         attention_mask[-count['test nodes']:]])
 
     return input_ids, attention_mask
 
@@ -175,6 +175,37 @@ def build_graph(adj_norm, input_ids, attention_mask, y, train_mask, val_mask, te
     return g
 
 
+def update_feature():
+
+    global model, g, doc_mask
+
+    # uses a large batchsize to speed up the process
+    dataloader = Data.DataLoader(
+        Data.TensorDataset(g.ndata['input_ids'][doc_mask], g.ndata['attention_mask'][doc_mask]),
+        batch_size=1024
+    )
+
+    # no gradient needed
+    with th.no_grad():
+
+        model = model.to(gpu)
+        model.eval()
+        cls_list = []
+
+        for i, batch in enumerate(dataloader):
+            input_ids, attention_mask = [x.to(gpu) for x in batch]
+            output = model.bert_model(input_ids=input_ids, attention_mask=attention_mask)[0][:, 0]
+            cls_list.append(output.cpu())
+
+        cls_feat = th.cat(cls_list, axis=0)
+
+    g = g.to(cpu)
+
+    g.ndata['cls_feats'][doc_mask] = cls_feat
+
+    return g
+
+
 if __name__ == '__main__':
 
     # Set up
@@ -197,25 +228,6 @@ if __name__ == '__main__':
     g = build_graph(adj_norm, input_ids, attention_mask, y, train_mask, val_mask, test_mask, y_train, count)
 
     # Training
-    def update_feature():
-        global model, g, doc_mask
-        # no gradient needed, uses a large batchsize to speed up the process
-        dataloader = Data.DataLoader(
-            Data.TensorDataset(g.ndata['input_ids'][doc_mask], g.ndata['attention_mask'][doc_mask]),
-            batch_size=1024
-        )
-        with th.no_grad():
-            model = model.to(gpu)
-            model.eval()
-            cls_list = []
-            for i, batch in enumerate(dataloader):
-                input_ids, attention_mask = [x.to(gpu) for x in batch]
-                output = model.bert_model(input_ids=input_ids, attention_mask=attention_mask)[0][:, 0]
-                cls_list.append(output.cpu())
-            cls_feat = th.cat(cls_list, axis=0)
-        g = g.to(cpu)
-        g.ndata['cls_feats'][doc_mask] = cls_feat
-        return g
 
 
     optimizer = th.optim.Adam([
@@ -224,6 +236,7 @@ if __name__ == '__main__':
             {'params': model.gcn.parameters(), 'lr': gcn_lr},
         ], lr=1e-3
     )
+
     scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[30], gamma=0.1)
 
 
