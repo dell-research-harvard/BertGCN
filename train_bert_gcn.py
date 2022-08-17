@@ -68,6 +68,8 @@ def load_data(dataset):
 
     # Todo: might want to simplify some of this into the load_corpus function
 
+    print("\n Loading dataset ... ")
+
     adj_norm, y_train, y_val, y_test, train_mask, val_mask, test_mask, text, count = load_corpus(dataset)
     '''
     adj: n*n sparse adjacency matrix
@@ -99,6 +101,8 @@ def load_data(dataset):
 
 def tokenize_data(text, model):
 
+    print("\n Tokenizing data ...")
+
     def encode_input(text, tokenizer):
         input = tokenizer(text, max_length=max_length, truncation=True, padding='max_length', return_tensors='pt')
         #     print(input.keys())
@@ -116,6 +120,40 @@ def tokenize_data(text, model):
          attention_mask[-count['nb_test']:]])
 
     return input_ids, attention_mask
+
+
+def build_graph(adj_norm, input_ids, attention_mask, y, train_mask, val_mask, test_mask, y_train, count):
+
+    print("\n Building graph ...")
+
+    # build DGL Graph
+    # edges
+    g = dgl.from_scipy(adj_norm.astype('float32'), eweight_name='edge_weight')
+
+    # nodes
+    g.ndata['input_ids'], g.ndata['attention_mask'] = input_ids, attention_mask
+    g.ndata['label'], g.ndata['train'], g.ndata['val'], g.ndata['test'] = \
+        th.LongTensor(y), th.FloatTensor(train_mask), th.FloatTensor(val_mask), th.FloatTensor(test_mask)
+    g.ndata['label_train'] = th.LongTensor(y_train)
+    g.ndata['cls_feats'] = th.zeros((count['total nodes'], model.feat_dim))
+
+    # test
+    h = dgl.from_scipy(adj_norm.astype('float32'), eweight_name='edge_weight')
+    h.ndata['input_ids'] = input_ids
+    h.ndata['attention_mask'] = attention_mask
+    h.ndata['label'] = th.LongTensor(y)
+    h.ndata['train'] = th.FloatTensor(train_mask)
+    h.ndata['val'] = th.FloatTensor(val_mask)
+    h.ndata['test'] = th.FloatTensor(test_mask)
+    h.ndata['label_train'] = th.LongTensor(y_train)
+    h.ndata['cls_feats'] = th.zeros((count['total nodes'], model.feat_dim))
+
+    assert g == h
+
+    logger.info('graph information:')
+    logger.info(str(g))
+
+    return g
 
 
 if __name__ == '__main__':
@@ -146,33 +184,8 @@ if __name__ == '__main__':
     # Tokenize data
     input_ids, attention_mask = tokenize_data(text, model)
 
-    # build DGL Graph
-    # edges
-    g = dgl.from_scipy(adj_norm.astype('float32'), eweight_name='edge_weight')
-
-    # nodes
-    g.ndata['input_ids'], g.ndata['attention_mask'] = input_ids, attention_mask
-    g.ndata['label'], g.ndata['train'], g.ndata['val'], g.ndata['test'] = \
-        th.LongTensor(y), th.FloatTensor(train_mask), th.FloatTensor(val_mask), th.FloatTensor(test_mask)
-    g.ndata['label_train'] = th.LongTensor(y_train)
-    g.ndata['cls_feats'] = th.zeros((count['total nodes'], model.feat_dim))
-
-    # test
-    h = dgl.from_scipy(adj_norm.astype('float32'), eweight_name='edge_weight')
-    h.ndata['input_ids'] = input_ids
-    h.ndata['attention_mask'] = attention_mask
-    h.ndata['label'] = th.LongTensor(y)
-    h.ndata['train'] = th.FloatTensor(train_mask)
-    h.ndata['val'] = th.FloatTensor(val_mask)
-    h.ndata['test'] = th.FloatTensor(test_mask)
-    h.ndata['label_train'] = th.LongTensor(y_train)
-    h.ndata['cls_feats'] = th.zeros((count['total nodes'], model.feat_dim))
-
-    assert g == h
-
-    logger.info('graph information:')
-    logger.info(str(g))
-
+    # Build graph
+    g = build_graph(adj_norm, input_ids, attention_mask, y, train_mask, val_mask, test_mask, y_train, count)
 
     # Training
     def update_feature():
