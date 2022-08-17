@@ -4,6 +4,7 @@ from transformers import AutoModel, AutoTokenizer
 from .torch_gcn import GCN
 from .torch_gat import GAT
 
+
 class BertClassifier(th.nn.Module):
     def __init__(self, pretrained_model='roberta_base', nb_class=20):
         super(BertClassifier, self).__init__()
@@ -51,7 +52,8 @@ class BertGCN(th.nn.Module):
         pred = (gcn_pred+1e-10) * self.m + cls_pred * (1 - self.m)
         pred = th.log(pred)
         return pred
-    
+
+
 class BertGAT(th.nn.Module):
     def __init__(self, pretrained_model='roberta_base', nb_class=20, m=0.7, gcn_layers=2, heads=8, n_hidden=32, dropout=0.5):
         super(BertGAT, self).__init__()

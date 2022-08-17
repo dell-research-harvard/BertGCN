@@ -6,6 +6,8 @@ from math import log
 import sys
 from tqdm import tqdm
 
+from utils import *
+
 
 def load_and_shuffle_data(dataset):
 
@@ -391,10 +393,12 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, datase
     # Make symmetric across main diagonal, by taking largest value
     adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
 
+    adj_norm = normalize_adj(adj + sp.eye(adj.shape[0]))
+
     print("Weighted edge matrix size:", adj.shape)
 
     f = open("data/ind.{}.adj".format(dataset), 'wb')
-    pkl.dump(adj, f)
+    pkl.dump(adj_norm, f)
     f.close()
 
 

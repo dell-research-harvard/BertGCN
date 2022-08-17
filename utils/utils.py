@@ -2,6 +2,32 @@ import numpy as np
 import pickle as pkl
 import scipy.sparse as sp
 import sys
+import logging
+import torch as th
+import os
+
+
+def set_up_logging(ckpt_dir, args):
+
+    # Set up logging
+    sh = logging.StreamHandler(sys.stdout)
+    sh.setFormatter(logging.Formatter('%(message)s'))
+    sh.setLevel(logging.INFO)
+    fh = logging.FileHandler(filename=os.path.join(ckpt_dir, 'training.log'), mode='w')
+    fh.setFormatter(logging.Formatter('%(message)s'))
+    fh.setLevel(logging.INFO)
+    logger = logging.getLogger('training logger')
+    logger.addHandler(sh)
+    logger.addHandler(fh)
+    logger.setLevel(logging.INFO)
+
+    logger.info('Arguments: {}'.format(str(args)))
+    logger.info('Checkpoints will be saved in {}'.format(ckpt_dir))
+
+    cpu = th.device('cpu')
+    gpu = th.device('cuda:0')
+
+    return logger, cpu, gpu
 
 
 def parse_index_file(filename):
@@ -89,7 +115,26 @@ def load_corpus(dataset_str):
     y_val[val_mask, :] = labels[val_mask, :]
     y_test[test_mask, :] = labels[test_mask, :]
 
-    return adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, train_size, test_size
+    # load documents
+    corpus_file = './data/corpus/'+dataset_str+'_shuffle.txt'
+    with open(corpus_file, 'r') as f:
+        text = f.read()
+        text = text.replace('\\', '')
+        text = text.split('\n')
+
+    # compute number of real train/val/test/word nodes and number of classes
+    count = {
+        'total nodes': features.shape[0],    # Todo: this is the only point where we use features - can maybe just be removed?
+        'train nodes': train_mask.sum(),
+        'val nodes': val_mask.sum(),
+        'test nodes': test_mask.sum()
+    }
+    count['word nodes'] = count['total nodes'] - count['train nodes'] - count['val nodes'] - count['test nodes']
+    count['classes'] = y_train.shape[1]
+
+    print('Data: {}'.format(str(count)))
+
+    return adj, y_train, y_val, y_test, train_mask, val_mask, test_mask, text, count
 
 
 def normalize_adj(adj):

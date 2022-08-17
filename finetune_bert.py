@@ -1,12 +1,8 @@
-import os
 import argparse
 import shutil
-import logging
 
 from sklearn.metrics import accuracy_score
-from model import BertClassifier
 
-import torch as th
 import torch.nn.functional as F
 import torch.utils.data as Data
 from torch.optim import lr_scheduler
@@ -15,6 +11,7 @@ from ignite.engine import Events, create_supervised_evaluator, create_supervised
 from ignite.metrics import Accuracy, Loss
 
 from utils import *
+from model import BertClassifier
 
 
 def load_parameters():
@@ -52,51 +49,16 @@ def load_parameters():
     return max_length, batch_size, nb_epochs, bert_lr, dataset, bert_init, ckpt_dir, args
 
 
-def set_up_logging(ckpt_dir, args):
-
-    # Set up logging
-    sh = logging.StreamHandler(sys.stdout)
-    sh.setFormatter(logging.Formatter('%(message)s'))
-    sh.setLevel(logging.INFO)
-    fh = logging.FileHandler(filename=os.path.join(ckpt_dir, 'training.log'), mode='w')
-    fh.setFormatter(logging.Formatter('%(message)s'))
-    fh.setLevel(logging.INFO)
-    logger = logging.getLogger('training logger')
-    logger.addHandler(sh)
-    logger.addHandler(fh)
-    logger.setLevel(logging.INFO)
-
-    logger.info('Arguments: {}'.format(str(args)))
-    logger.info('Checkpoints will be saved in {}'.format(ckpt_dir))
-
-    cpu = th.device('cpu')
-    gpu = th.device('cuda:0')
-
-    return logger, cpu, gpu
-
-
 def load_data(dataset, logger):
 
-    # Todo: might want to simplify some of this into the load_data function
+    # Todo: might want to simplify some of this into the load_corpus function
 
     # Load data
-    _, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, _, _ = load_corpus(dataset)
+    _, y_train, y_val, y_test, train_mask, val_mask, test_mask, text, count = load_corpus(dataset)
     '''
     y_train, y_val, y_test: n*c matrices (np.arrays)
     train_mask, val_mask, test_mask: n-d bool array
     '''
-
-    # compute number of real train/val/test/word nodes and number of classes
-    count = {
-        'total nodes': features.shape[0],
-        'train nodes': train_mask.sum(),
-        'val nodes': val_mask.sum(),
-        'test nodes': test_mask.sum()
-    }
-    count['word nodes'] = count['total nodes'] - count['train nodes'] - count['val nodes'] - count['test nodes']
-    count['classes'] = y_train.shape[1]
-
-    logger.info('Data: {}'.format(str(count)))
 
     # transform one-hot label to class ID for pytorch computation
     y = th.LongTensor((y_train + y_val + y_test).argmax(axis=1))
@@ -105,13 +67,6 @@ def load_data(dataset, logger):
         'val': y[count['train nodes']:count['train nodes'] + count['val nodes']],
         'test': y[-count['test nodes']:]
     }
-
-    # load documents
-    corpus_file = './data/corpus/'+dataset+'_shuffle.txt'
-    with open(corpus_file, 'r') as f:
-        text = f.read()
-        text = text.replace('\\', '')
-        text = text.split('\n')
 
     return text, count, label_dict
 

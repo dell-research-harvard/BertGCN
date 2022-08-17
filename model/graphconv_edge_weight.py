@@ -4,6 +4,7 @@ from dgl.base import DGLError
 from dgl.utils import expand_as_pair
 import torch as th
 
+
 class GraphConvEdgeWeight(GraphConv):
 
     def forward(self, graph, feat,  weight=None, edge_weights=None):
