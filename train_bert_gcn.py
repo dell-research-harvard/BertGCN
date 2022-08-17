@@ -99,6 +99,25 @@ def load_data(dataset):
     return y, y_train, train_mask, val_mask, test_mask, doc_mask, idx_loader_train, idx_loader_val, idx_loader_test, idx_loader, adj_norm, text, count
 
 
+def instantiate_model(gcn_model, count, bert_init, m, gcn_layers, n_hidden, dropout, pretrained_bert_ckpt, gpu):
+
+    print("\n Instantiating model ... ")
+
+    if gcn_model == 'gcn':
+        model = BertGCN(nb_class=count['classes'], pretrained_model=bert_init, m=m, gcn_layers=gcn_layers,
+                        n_hidden=n_hidden, dropout=dropout)
+    else:
+        model = BertGAT(nb_class=count['classes'], pretrained_model=bert_init, m=m, gcn_layers=gcn_layers,
+                        heads=heads, n_hidden=n_hidden, dropout=dropout)
+
+    if pretrained_bert_ckpt is not None:
+        ckpt = th.load(pretrained_bert_ckpt, map_location=gpu)
+        model.bert_model.load_state_dict(ckpt['bert_model'])
+        model.classifier.load_state_dict(ckpt['classifier'])
+
+    return model
+
+
 def tokenize_data(text, model):
 
     print("\n Tokenizing data ...")
@@ -169,17 +188,7 @@ if __name__ == '__main__':
         idx_loader, adj_norm, text, count = load_data(dataset)
 
     # Instantiate model
-    if gcn_model == 'gcn':
-        model = BertGCN(nb_class=count['classes'], pretrained_model=bert_init, m=m, gcn_layers=gcn_layers,
-                        n_hidden=n_hidden, dropout=dropout)
-    else:
-        model = BertGAT(nb_class=count['classes'], pretrained_model=bert_init, m=m, gcn_layers=gcn_layers,
-                        heads=heads, n_hidden=n_hidden, dropout=dropout)
-
-    if pretrained_bert_ckpt is not None:
-        ckpt = th.load(pretrained_bert_ckpt, map_location=gpu)
-        model.bert_model.load_state_dict(ckpt['bert_model'])
-        model.classifier.load_state_dict(ckpt['classifier'])
+    model = instantiate_model(gcn_model, count, bert_init, m, gcn_layers, n_hidden, dropout, pretrained_bert_ckpt, gpu)
 
     # Tokenize data
     input_ids, attention_mask = tokenize_data(text, model)

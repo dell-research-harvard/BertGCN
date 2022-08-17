@@ -9,6 +9,8 @@ import os
 
 def set_up_logging(ckpt_dir, args):
 
+    print("\n Set up ...")
+
     # Set up logging
     sh = logging.StreamHandler(sys.stdout)
     sh.setFormatter(logging.Formatter('%(message)s'))
