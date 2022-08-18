@@ -162,6 +162,8 @@ def build_graph(adj_norm, input_ids, attention_mask, y, train_mask, val_mask, te
 
 def train(g, model):
 
+    global optimizer, scheduler
+
     def update_feature():
 
         """
@@ -194,8 +196,6 @@ def train(g, model):
     ], lr=1e-3
     )
     scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[30], gamma=0.1)
-
-    global optimizer, scheduler
 
     def train_step(engine, batch):
         global model, g, optimizer
