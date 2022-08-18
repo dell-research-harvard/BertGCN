@@ -58,10 +58,6 @@ def load_corpus(dataset_str, batch_size=None):
     """
     Loads input corpus from gcn/data directory
 
-    ind.dataset_str.x => the feature vectors of the training docs as scipy.sparse.csr.csr_matrix object;
-    ind.dataset_str.tx => the feature vectors of the test docs as scipy.sparse.csr.csr_matrix object;
-    ind.dataset_str.allx => the feature vectors of both labeled and unlabeled training docs/words
-        (a superset of ind.dataset_str.x) as scipy.sparse.csr.csr_matrix object;
     ind.dataset_str.y => the one-hot labels of the labeled training docs as numpy.ndarray object;
     ind.dataset_str.ty => the one-hot labels of the test docs as numpy.ndarray object;
     ind.dataset_str.ally => the labels for instances in ind.dataset_str.allx as numpy.ndarray object;
@@ -71,7 +67,7 @@ def load_corpus(dataset_str, batch_size=None):
     All objects above must be saved using python pickle module.
 
     :param dataset_str: Dataset name
-    :return:
+    :return: ~todo: update
     - adj: adj (unchanged)
     - features: allx and tx vertically stacked, in lil format
     - y_train: np.array of length=train+val+test and width=n labels, with 1 if train data y is label x, 0 otherwise
@@ -84,9 +80,7 @@ def load_corpus(dataset_str, batch_size=None):
     - test_size: length of test data
     """
 
-    # Todo: probably move all of this data cleaning to the graph creation script so it's all in one place
-
-    names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'adj']
+    names = ['y', 'ty', 'ally', 'adj']
     objects = []
     for i in range(len(names)):
         with open("data/ind.{}.{}".format(dataset_str, names[i]), 'rb') as f:
@@ -95,33 +89,21 @@ def load_corpus(dataset_str, batch_size=None):
             else:
                 objects.append(pkl.load(f))
 
-    x, y, tx, ty, allx, ally, adj = tuple(objects)
-
-    features = sp.vstack((allx, tx)).tolil()       # Stack sparse matrices vertically (row wise)
-    labels = np.vstack((ally, ty))                 # .tolil() converts to list of lists
+    y, ty, ally, adj = tuple(objects)
 
     # Lengths of things
     with open('data/' + dataset_str + '.count.json') as f:
         count = json.load(f)
 
-    train_idx_orig = parse_index_file(
-        "data/{}.train.index".format(dataset_str))
-    train_size = len(train_idx_orig)
+    labels = np.vstack((ally, ty))
 
-    val_size = train_size - x.shape[0]
-    test_size = tx.shape[0]
+    print("*******")
+    print(labels.shape)
+    print("*******")
 
-    idx_train = range(len(y))
-    idx_val = range(len(y), len(y) + val_size)
-    idx_test = range(allx.shape[0], allx.shape[0] + test_size)
-
-    print(idx_train)
-    print(idx_val)
-    print(idx_test)
-
-    train_mask = sample_mask(idx_train, labels.shape[0])
-    val_mask = sample_mask(idx_val, labels.shape[0])
-    test_mask = sample_mask(idx_test, labels.shape[0])
+    train_mask = sample_mask(range(count['train nodes']), labels.shape[0])
+    val_mask = sample_mask(range(count['train nodes'], count['train nodes'] + count['val nodes']), labels.shape[0])
+    test_mask = sample_mask(range(count['total nodes'] - count['test nodes'], count['total nodes']), labels.shape[0])
 
     # document mask used for update feature
     doc_mask = train_mask + val_mask + test_mask

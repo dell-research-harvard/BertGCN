@@ -58,11 +58,6 @@ def load_and_shuffle_data(dataset):
         # # partial labeled data # Todo: look more into this
         # #train_ids = train_ids[:int(0.2 * len(train_ids))]
 
-        split_ids_str = '\n'.join(str(index) for index in splits[split]['ids'])
-        f = open(f'data/{dataset}.{split}.index', 'w')
-        f.write(split_ids_str)
-        f.close()
-
     ids = splits['train']['ids'] + splits['test']['ids']
 
     shuffle_doc_name_list = []
@@ -70,13 +65,8 @@ def load_and_shuffle_data(dataset):
     for id in ids:
         shuffle_doc_name_list.append(doc_name_list[int(id)])
         shuffle_doc_words_list.append(doc_content_list[int(id)])
-    shuffle_doc_name_str = '\n'.join(shuffle_doc_name_list)
+
     shuffle_doc_words_str = '\n'.join(shuffle_doc_words_list)
-
-    f = open('data/' + dataset + '_shuffle.txt', 'w')
-    f.write(shuffle_doc_name_str)
-    f.close()
-
     f = open('data/corpus/' + dataset + '_shuffle.txt', 'w')
     f.write(shuffle_doc_words_str)
     f.close()
@@ -97,12 +87,6 @@ def create_vocab_list(shuffle_doc_words_list, dataset):
 
     print(f"Vocabulary size: {len(vocab)}")
 
-    vocab_str = '\n'.join(vocab)
-
-    f = open('data/corpus/' + dataset + '_vocab.txt', 'w')
-    f.write(vocab_str)
-    f.close()
-
     # Dictionary mapping words to unique ids
     word_id_map = {}
     for i in range(len(vocab)):
@@ -115,7 +99,6 @@ def create_nodes(
         shuffle_doc_name_list,
         train_ids,
         test_ids,
-        word_embeddings_dim,
         vocab,
         dataset
 ):
@@ -129,28 +112,16 @@ def create_nodes(
         label_set.add(temp[2])
     label_list = list(label_set)
 
-    label_list_str = '\n'.join(label_list)
-    f = open('data/corpus/' + dataset + '_labels.txt', 'w')
-    f.write(label_list_str)
-    f.close()
-
     # Split 10% of the training data off to be the eval set
     train_size = len(train_ids)
     val_size = int(0.1 * train_size)
     real_train_size = train_size - val_size  # - int(0.5 * train_size)
 
-    real_train_doc_names = shuffle_doc_name_list[:real_train_size]
-    real_train_doc_names_str = '\n'.join(real_train_doc_names)
-
-    f = open('data/' + dataset + '.real_train.name', 'w')
-    f.write(real_train_doc_names_str)
-    f.close()
-
-    # Dictionary of number of useful things
+    # Dictionary of counts of useful things
     count = {
         'total nodes': len(train_ids) + len(test_ids) + len(vocab),
         'train nodes': real_train_size,
-        'val nodes': len(train_ids) - real_train_size,
+        'val nodes': val_size,
         'test nodes': len(test_ids),
         'word nodes': len(vocab),
         'classes': len(label_list)
@@ -168,33 +139,6 @@ def create_nodes(
             vocab_length=0,
             save_prefix=""
     ):
-
-        # Create feature matrix, x,  for training docs. At the moment, we don't have any
-        row_x = list(range(data_length)) * word_embeddings_dim
-        tmp_col_x = [[dim] * data_length for dim in range(word_embeddings_dim)]
-        col_x = [x for l in tmp_col_x for x in l]
-        data_x = [0.0] * (data_length * word_embeddings_dim)
-
-        if add_vocab:
-
-            row_x = [int(i) for i in row_x]
-
-            word_vectors = np.random.uniform(-0.01, 0.01, (vocab_length, word_embeddings_dim))
-
-            for i in range(vocab_length):
-                for j in range(word_embeddings_dim):
-                    row_x.append(int(i + data_length))
-                    col_x.append(j)
-                    data_x.append(word_vectors.item((i, j)))
-
-            row_x = np.array(row_x)
-            col_x = np.array(col_x)
-            data_x = np.array(data_x)
-
-            x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(data_length + vocab_length, word_embeddings_dim))
-
-        else:
-            x = sp.csr_matrix((data_x, (row_x, col_x)), shape=(data_length, word_embeddings_dim))
 
         # Create y, a sparse matrix of labels
         y = []
@@ -214,11 +158,7 @@ def create_nodes(
 
         y = np.array(y)
 
-        print("Featurized matrix sizes:", x.shape, y.shape)
-
-        f = open(f"data/ind.{dataset}.{save_prefix}x", 'wb')
-        pkl.dump(x, f)
-        f.close()
+        print("Featurized matrix sizes:", y.shape)
 
         f = open(f"data/ind.{dataset}.{save_prefix}y", 'wb')
         pkl.dump(y, f)
@@ -431,7 +371,6 @@ if __name__ == '__main__':
         shuffle_doc_name_list,
         train_ids,
         test_ids,
-        word_embeddings_dim=300,
         vocab=vocab,
         dataset=dataset_name
     )
