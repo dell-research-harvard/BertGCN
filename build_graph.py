@@ -5,6 +5,7 @@ import scipy.sparse as sp
 from math import log
 import sys
 from tqdm import tqdm
+import json
 
 from utils import *
 
@@ -144,6 +145,21 @@ def create_nodes(
     f = open('data/' + dataset + '.real_train.name', 'w')
     f.write(real_train_doc_names_str)
     f.close()
+
+    # Dictionary of number of useful things
+    count = {
+        'total nodes': len(train_ids) + len(test_ids) + len(vocab),
+        'train nodes': real_train_size,
+        'val nodes': len(train_ids) - real_train_size,
+        'test nodes': len(test_ids),
+        'word nodes': len(vocab),
+        'classes': len(label_list)
+    }
+
+    with open('data/' + dataset + '.count.json', 'w') as f:
+        json.dump(count, f, indent=4)
+
+    print('Data: {}'.format(str(count)))
 
     def node_matrix_creation(
             data_length,

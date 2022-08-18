@@ -3,6 +3,7 @@ import pickle as pkl
 import sys
 import logging
 import os
+import json
 
 import scipy.sparse as sp
 
@@ -99,12 +100,9 @@ def load_corpus(dataset_str, batch_size=None):
     features = sp.vstack((allx, tx)).tolil()       # Stack sparse matrices vertically (row wise)
     labels = np.vstack((ally, ty))                 # .tolil() converts to list of lists
 
-    ## Lengths of things
-
-    print("******")
-    print(allx.shape)
-    print("******")
-    print(tx.shape)
+    # Lengths of things
+    with open('data/' + dataset_str + '.count.json') as f:
+        count = json.load(f)
 
     train_idx_orig = parse_index_file(
         "data/{}.train.index".format(dataset_str))
@@ -117,23 +115,13 @@ def load_corpus(dataset_str, batch_size=None):
     idx_val = range(len(y), len(y) + val_size)
     idx_test = range(allx.shape[0], allx.shape[0] + test_size)
 
+    print(idx_train)
+    print(idx_val)
+    print(idx_test)
+
     train_mask = sample_mask(idx_train, labels.shape[0])
     val_mask = sample_mask(idx_val, labels.shape[0])
     test_mask = sample_mask(idx_test, labels.shape[0])
-
-    # compute number of real train/val/test/word nodes and number of classes
-    count = {
-        'total nodes': features.shape[0],    # Todo: this is the only point where we use features - can maybe just be removed?
-        'train nodes': train_mask.sum(),
-        'val nodes': val_mask.sum(),
-        'test nodes': test_mask.sum()
-    }
-    count['word nodes'] = count['total nodes'] - count['train nodes'] - count['val nodes'] - count['test nodes']
-    count['classes'] = labels.shape[1]
-
-    print('Data: {}'.format(str(count)))
-
-
 
     # document mask used for update feature
     doc_mask = train_mask + val_mask + test_mask
