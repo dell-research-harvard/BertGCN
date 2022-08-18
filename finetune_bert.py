@@ -49,28 +49,6 @@ def load_parameters():
     return max_length, batch_size, nb_epochs, bert_lr, dataset, bert_init, ckpt_dir, args
 
 
-def load_data(dataset, logger):
-
-    # Todo: might want to simplify some of this into the load_corpus function
-
-    # Load data
-    _, y_train, y_val, y_test, train_mask, val_mask, test_mask, text, count = load_corpus(dataset)
-    '''
-    y_train, y_val, y_test: n*c matrices (np.arrays)
-    train_mask, val_mask, test_mask: n-d bool array
-    '''
-
-    # transform one-hot label to class ID for pytorch computation
-    y = th.LongTensor((y_train + y_val + y_test).argmax(axis=1))
-    label_dict = {
-        'train': y[:count['train nodes']],
-        'val': y[count['train nodes']:count['train nodes'] + count['val nodes']],
-        'test': y[-count['test nodes']:]
-    }
-
-    return text, count, label_dict
-
-
 def tokenize_data(text, count, label_dict, model, max_length):
 
     print("Tokenizing data ...")
@@ -213,7 +191,7 @@ if __name__ == '__main__':
 
     logger, cpu, gpu = set_up_logging(ckpt_dir, args)
 
-    text, count_dict, label_dict = load_data(dataset, logger)
+    _, _, _, _, _, _, _, text, count_dict, label_dict = load_corpus(dataset)
 
     model = BertClassifier(pretrained_model=bert_init, nb_class=count_dict['classes'])
     optimizer = th.optim.Adam(model.parameters(), lr=bert_lr)

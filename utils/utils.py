@@ -1,10 +1,14 @@
 import numpy as np
 import pickle as pkl
-import scipy.sparse as sp
 import sys
 import logging
-import torch as th
 import os
+
+import scipy.sparse as sp
+
+import torch as th
+import torch.utils.data as Data
+
 
 
 def set_up_logging(ckpt_dir, args):
@@ -49,7 +53,7 @@ def sample_mask(idx, length):
     return np.array(mask, dtype=np.bool)
 
 
-def load_corpus(dataset_str):
+def load_corpus(dataset_str, batch_size=None):
     """
     Loads input corpus from gcn/data directory
 
@@ -95,6 +99,13 @@ def load_corpus(dataset_str):
     features = sp.vstack((allx, tx)).tolil()       # Stack sparse matrices vertically (row wise)
     labels = np.vstack((ally, ty))                 # .tolil() converts to list of lists
 
+    ## Lengths of things
+
+    print("******")
+    print(allx.shape)
+    print("******")
+    print(tx.shape)
+
     train_idx_orig = parse_index_file(
         "data/{}.train.index".format(dataset_str))
     train_size = len(train_idx_orig)
@@ -110,6 +121,23 @@ def load_corpus(dataset_str):
     val_mask = sample_mask(idx_val, labels.shape[0])
     test_mask = sample_mask(idx_test, labels.shape[0])
 
+    # compute number of real train/val/test/word nodes and number of classes
+    count = {
+        'total nodes': features.shape[0],    # Todo: this is the only point where we use features - can maybe just be removed?
+        'train nodes': train_mask.sum(),
+        'val nodes': val_mask.sum(),
+        'test nodes': test_mask.sum()
+    }
+    count['word nodes'] = count['total nodes'] - count['train nodes'] - count['val nodes'] - count['test nodes']
+    count['classes'] = labels.shape[1]
+
+    print('Data: {}'.format(str(count)))
+
+
+
+    # document mask used for update feature
+    doc_mask = train_mask + val_mask + test_mask
+
     y_train = np.zeros(labels.shape)
     y_val = np.zeros(labels.shape)
     y_test = np.zeros(labels.shape)
@@ -124,19 +152,36 @@ def load_corpus(dataset_str):
         text = text.replace('\\', '')
         text = text.split('\n')
 
-    # compute number of real train/val/test/word nodes and number of classes
-    count = {
-        'total nodes': features.shape[0],    # Todo: this is the only point where we use features - can maybe just be removed?
-        'train nodes': train_mask.sum(),
-        'val nodes': val_mask.sum(),
-        'test nodes': test_mask.sum()
+    # transform one-hot label to class ID for pytorch computation
+    temp_y = th.LongTensor((y_train + y_val + y_test).argmax(axis=1))
+    label_dict = {
+        'train': temp_y[:count['train nodes']],
+        'val': temp_y[count['train nodes']:count['train nodes'] + count['val nodes']],
+        'test': temp_y[-count['test nodes']:]
     }
-    count['word nodes'] = count['total nodes'] - count['train nodes'] - count['val nodes'] - count['test nodes']
-    count['classes'] = y_train.shape[1]
 
-    print('Data: {}'.format(str(count)))
+    # transform one-hot label to class ID for pytorch computation
+    y = y_train + y_test + y_val
+    y_train = y_train.argmax(axis=1)
+    y = y.argmax(axis=1)
 
-    return adj, y_train, y_val, y_test, train_mask, val_mask, test_mask, text, count
+    # create index loader
+    train_idx = Data.TensorDataset(th.arange(0, count['train nodes'], dtype=th.long))
+    val_idx = Data.TensorDataset(th.arange(count['train nodes'], count['train nodes'] + count['val nodes'], dtype=th.long))
+    test_idx = Data.TensorDataset(th.arange(count['total nodes'] - count['test nodes'], count['total nodes'], dtype=th.long))
+    doc_idx = Data.ConcatDataset([train_idx, val_idx, test_idx])
+
+    if batch_size:
+        idx_loader_train = Data.DataLoader(train_idx, batch_size=batch_size, shuffle=True)
+        idx_loader_val = Data.DataLoader(val_idx, batch_size=batch_size)
+        idx_loader_test = Data.DataLoader(test_idx, batch_size=batch_size)
+        idx_loader = Data.DataLoader(doc_idx, batch_size=batch_size, shuffle=True)
+
+        return y, y_train, train_mask, val_mask, test_mask, doc_mask, idx_loader_train, idx_loader_val, idx_loader_test, \
+               idx_loader, adj, text, count, label_dict
+
+    else:
+        return y, y_train, train_mask, val_mask, test_mask, doc_mask, adj, text, count, label_dict
 
 
 def normalize_adj(adj):

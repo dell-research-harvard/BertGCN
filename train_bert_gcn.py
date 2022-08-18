@@ -5,7 +5,6 @@ import dgl
 from sklearn.metrics import accuracy_score
 
 import torch.nn.functional as F
-import torch.utils.data as Data
 from torch.optim import lr_scheduler
 
 from ignite.engine import Events, create_supervised_evaluator, create_supervised_trainer, Engine
@@ -61,41 +60,6 @@ def load_parameters():
 
     return args, max_length, batch_size, m, nb_epochs, bert_init, pretrained_bert_ckpt, dataset, \
            gcn_model, gcn_layers, n_hidden, heads, dropout, gcn_lr, bert_lr, ckpt_dir
-
-
-def load_data(dataset):
-
-    # Todo: might want to simplify some of this into the load_corpus function
-
-    print("\n Loading dataset ... ")
-
-    adj_norm, y_train, y_val, y_test, train_mask, val_mask, test_mask, text, count = load_corpus(dataset)
-    '''
-    adj: n*n sparse adjacency matrix
-    y_train, y_val, y_test: n*c matrices 
-    train_mask, val_mask, test_mask: n-d bool array
-    '''
-
-    # transform one-hot label to class ID for pytorch computation
-    y = y_train + y_test + y_val
-    y_train = y_train.argmax(axis=1)
-    y = y.argmax(axis=1)
-
-    # document mask used for update feature
-    doc_mask = train_mask + val_mask + test_mask
-
-    # create index loader
-    train_idx = Data.TensorDataset(th.arange(0, count['train nodes'], dtype=th.long))
-    val_idx = Data.TensorDataset(th.arange(count['train nodes'], count['train nodes'] + count['val nodes'], dtype=th.long))
-    test_idx = Data.TensorDataset(th.arange(count['total nodes'] - count['test nodes'], count['total nodes'], dtype=th.long))
-    doc_idx = Data.ConcatDataset([train_idx, val_idx, test_idx])
-
-    idx_loader_train = Data.DataLoader(train_idx, batch_size=batch_size, shuffle=True)
-    idx_loader_val = Data.DataLoader(val_idx, batch_size=batch_size)
-    idx_loader_test = Data.DataLoader(test_idx, batch_size=batch_size)
-    idx_loader = Data.DataLoader(doc_idx, batch_size=batch_size, shuffle=True)
-
-    return y, y_train, train_mask, val_mask, test_mask, doc_mask, idx_loader_train, idx_loader_val, idx_loader_test, idx_loader, adj_norm, text, count
 
 
 def instantiate_model(gcn_model, count, bert_init, m, gcn_layers, n_hidden, dropout, pretrained_bert_ckpt, gpu):
@@ -295,7 +259,7 @@ if __name__ == '__main__':
 
     # Load and format data
     y, y_train, train_mask, val_mask, test_mask, doc_mask, idx_loader_train, idx_loader_val, idx_loader_test, \
-        idx_loader, adj_norm, text, count = load_data(dataset)
+        idx_loader, adj_norm, text, count, _ = load_corpus(dataset, batch_size)
 
     # Instantiate model
     model = instantiate_model(gcn_model, count, bert_init, m, gcn_layers, n_hidden, dropout, pretrained_bert_ckpt, gpu)
