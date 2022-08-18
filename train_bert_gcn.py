@@ -1,7 +1,6 @@
-import os
 import shutil
 import argparse
-import logging
+
 import dgl
 from sklearn.metrics import accuracy_score
 
@@ -195,6 +194,8 @@ def train(g, model):
     ], lr=1e-3
     )
     scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[30], gamma=0.1)
+
+    global optimizer, scheduler
 
     def train_step(engine, batch):
         global model, g, optimizer
