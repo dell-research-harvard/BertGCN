@@ -12,6 +12,10 @@ from utils import *
 
 def load_and_shuffle_data(dataset):
 
+    """
+    Open data
+    """
+
     print("\n Opening and shuffling data...")
 
     # Check dataset
@@ -55,7 +59,7 @@ def load_and_shuffle_data(dataset):
             splits[split]['ids'].append(split_id)
         random.shuffle(splits[split]['ids'])
 
-        # # partial labeled data # Todo: look more into this
+        # # partial labeled data
         # #train_ids = train_ids[:int(0.2 * len(train_ids))]
 
     ids = splits['train']['ids'] + splits['test']['ids']
@@ -71,10 +75,21 @@ def load_and_shuffle_data(dataset):
     f.write(shuffle_doc_words_str)
     f.close()
 
-    return shuffle_doc_name_list, shuffle_doc_words_list, splits['train']['ids'], splits['test']['ids']
+    # Split 10% of the training data off to be the eval set
+    train_size = len(splits['train']['ids'])
+    val_size = int(0.1 * train_size)
+    real_train_size = train_size - val_size  # - int(0.5 * train_size)
 
+    # Dictionary of counts of useful things
+    count = {
+        'train nodes': real_train_size,
+        'val nodes': val_size,
+        'test nodes': len(splits['test']['ids']),
+    }
 
-def create_vocab_list(shuffle_doc_words_list, dataset):
+    """
+    Create list of all words in data
+    """
 
     # Build vocab
     word_set = set()
@@ -92,18 +107,16 @@ def create_vocab_list(shuffle_doc_words_list, dataset):
     for i in range(len(vocab)):
         word_id_map[vocab[i]] = i
 
-    return vocab, word_id_map
+    # Add counts to count dict
+    count['total nodes'] = train_size + len(splits['test']['ids']) + len(vocab)
+    count['word nodes'] = len(vocab)
 
 
-def create_nodes(
-        shuffle_doc_name_list,
-        train_ids,
-        test_ids,
-        vocab,
-        dataset
-):
+    """
+    Create sparse label matrix 
+    """
 
-    print("\n Creating node vectors...")
+    print("\n Creating label matrix...")
 
     # Create list of unique labels
     label_set = set()
@@ -112,81 +125,38 @@ def create_nodes(
         label_set.add(temp[2])
     label_list = list(label_set)
 
-    # Split 10% of the training data off to be the eval set
-    train_size = len(train_ids)
-    val_size = int(0.1 * train_size)
-    real_train_size = train_size - val_size  # - int(0.5 * train_size)
+    # Add to count dict
+    count['classes'] = len(label_list)
 
-    # Dictionary of counts of useful things
-    count = {
-        'total nodes': len(train_ids) + len(test_ids) + len(vocab),
-        'train nodes': real_train_size,
-        'val nodes': val_size,
-        'test nodes': len(test_ids),
-        'word nodes': len(vocab),
-        'classes': len(label_list)
-    }
+    # Create a sparse matrix of labels
+    labels = []
+    for i in range(count['train nodes'] + count['val nodes'] + count['test nodes']):
+        doc_meta = shuffle_doc_name_list[i]
+        temp = doc_meta.split('\t')
+        label = temp[2]
+        one_hot = [0 for l in range(count['classes'])]
+        label_index = label_list.index(label)
+        one_hot[label_index] = 1
+        labels.append(one_hot)
 
+    labels = np.array(labels)
+
+    print("Label matrix size:", labels.shape)
+
+    f = open(f"data/ind.{dataset}.labels", 'wb')
+    pkl.dump(labels, f)
+    f.close()
+
+    # Save count dict
     with open('data/' + dataset + '.count.json', 'w') as f:
         json.dump(count, f, indent=4)
 
     print('Data: {}'.format(str(count)))
 
-    def node_matrix_creation(
-            data_length,
-            start_index=0,
-            add_vocab=False,
-            vocab_length=0,
-            save_prefix=""
-    ):
-
-        # Create y, a sparse matrix of labels
-        y = []
-        for i in range(data_length):
-            doc_meta = shuffle_doc_name_list[i + start_index]
-            temp = doc_meta.split('\t')
-            label = temp[2]
-            one_hot = [0 for l in range(len(label_list))]
-            label_index = label_list.index(label)
-            one_hot[label_index] = 1
-            y.append(one_hot)
-
-        if add_vocab:
-            for i in range(vocab_length):
-                one_hot = [0 for l in range(len(label_list))]
-                y.append(one_hot)
-
-        y = np.array(y)
-
-        print("Featurized matrix sizes:", y.shape)
-
-        f = open(f"data/ind.{dataset}.{save_prefix}y", 'wb')
-        pkl.dump(y, f)
-        f.close()
-
-    # Create and save node matrices for training data
-    node_matrix_creation(
-        data_length=real_train_size,
-        save_prefix=""
-    )
-
-    # Create and save node matrices for test data
-    node_matrix_creation(
-        data_length=len(test_ids),
-        start_index=len(train_ids),
-        save_prefix="t"
-    )
-
-    # Create and save node matrices for train + eval data + vocab together
-    node_matrix_creation(
-        data_length=len(train_ids),
-        add_vocab=True,
-        vocab_length=len(vocab),
-        save_prefix="all"
-    )
+    return shuffle_doc_words_list, vocab, word_id_map, count
 
 
-def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, dataset):
+def create_edges(shuffle_doc_words_list, vocab, word_id_map, count, window_size, dataset):
 
     '''
     Calculate PMI, for word-word edges
@@ -248,8 +218,8 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, datase
     weight = []
 
     num_window = len(windows)
-    train_size = len(train_ids)
-    test_size = len(test_ids)
+    train_size = count['train nodes']
+    test_size = count['test nodes']
 
     for key in word_pair_count:
         temp = key.split(',')
@@ -360,19 +330,10 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size, datase
 
 if __name__ == '__main__':
 
-    if len(sys.argv) != 2: sys.exit("Use: python build_graph.py <dataset>")
+    if len(sys.argv) != 2:
+        sys.exit("Use: python build_graph.py <dataset>")
     dataset_name = sys.argv[1]
 
-    shuffle_doc_name_list, shuffle_doc_words_list, train_ids, test_ids = load_and_shuffle_data(dataset=dataset_name)
+    shuffle_doc_words_list, vocab, word_id_map, count = load_and_shuffle_data(dataset=dataset_name)
 
-    vocab, word_id_map = create_vocab_list(shuffle_doc_words_list, dataset=dataset_name)
-
-    create_nodes(
-        shuffle_doc_name_list,
-        train_ids,
-        test_ids,
-        vocab=vocab,
-        dataset=dataset_name
-    )
-
-    create_edges(shuffle_doc_words_list, vocab, word_id_map, window_size=20, dataset=dataset_name)
+    create_edges(shuffle_doc_words_list, vocab, word_id_map, count, window_size=20, dataset=dataset_name)

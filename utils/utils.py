@@ -80,7 +80,7 @@ def load_corpus(dataset_str, batch_size=None):
     - test_size: length of test data
     """
 
-    names = ['y', 'ty', 'ally', 'adj']
+    names = ['labels', 'adj']
     objects = []
     for i in range(len(names)):
         with open("data/ind.{}.{}".format(dataset_str, names[i]), 'rb') as f:
@@ -89,7 +89,7 @@ def load_corpus(dataset_str, batch_size=None):
             else:
                 objects.append(pkl.load(f))
 
-    y, ty, ally, adj = tuple(objects)
+    labels, adj = tuple(objects)
 
     # load documents
     corpus_file = './data/corpus/'+dataset_str+'_shuffle.txt'
@@ -108,19 +108,13 @@ def load_corpus(dataset_str, batch_size=None):
     test_mask = sample_mask(range(count['total nodes']-count['test nodes'], count['total nodes']), count['total nodes'])
     doc_mask = train_mask + val_mask + test_mask
 
-    # Labels
-    labels = np.vstack((ally, ty))
-
+    # Reformat labels
     y_train = np.zeros(labels.shape)
     y_val = np.zeros(labels.shape)
     y_test = np.zeros(labels.shape)
     y_train[train_mask, :] = labels[train_mask, :]
     y_val[val_mask, :] = labels[val_mask, :]
     y_test[test_mask, :] = labels[test_mask, :]
-
-    print("*****")
-    print(y_train)
-    print("*****")
 
     # transform one-hot label to class ID for pytorch computation (used in finetuning)
     temp_y = th.LongTensor((y_train + y_val + y_test).argmax(axis=1))
