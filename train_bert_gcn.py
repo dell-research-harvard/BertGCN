@@ -161,98 +161,32 @@ def build_graph(adj_norm, input_ids, attention_mask, y, train_mask, val_mask, te
     return g
 
 
-def update_feature():
-
-    global model, g, doc_mask
-
-    # uses a large batchsize to speed up the process
-    dataloader = Data.DataLoader(
-        Data.TensorDataset(g.ndata['input_ids'][doc_mask], g.ndata['attention_mask'][doc_mask]),
-        batch_size=1024
-    )
-
-    # no gradient needed
-    with th.no_grad():
-
-        model = model.to(gpu)
-        model.eval()
-        cls_list = []
-
-        for i, batch in enumerate(dataloader):
-            input_ids, attention_mask = [x.to(gpu) for x in batch]
-            output = model.bert_model(input_ids=input_ids, attention_mask=attention_mask)[0][:, 0]
-            cls_list.append(output.cpu())
-
-        cls_feat = th.cat(cls_list, axis=0)
-
-    g = g.to(cpu)
-
-    g.ndata['cls_feats'][doc_mask] = cls_feat
-
-    return g
-
-
-def train_step(engine, batch):
-    global model, g, optimizer
-
-    model.train()
-    model = model.to(gpu)
-
-    g = g.to(gpu)
-
-    optimizer.zero_grad()
-
-    (idx, ) = [x.to(gpu) for x in batch]
-
-    optimizer.zero_grad()
-
-    train_mask = g.ndata['train'][idx].type(th.BoolTensor)
-
-    y_pred = model(g, idx)[train_mask]
-    y_true = g.ndata['label_train'][idx][train_mask]
-
-    loss = F.nll_loss(y_pred, y_true)
-    loss.backward()
-
-    optimizer.step()
-
-    g.ndata['cls_feats'].detach_()
-
-    train_loss = loss.item()
-
-    with th.no_grad():
-
-        if train_mask.sum() > 0:
-            y_true = y_true.detach().cpu()
-            y_pred = y_pred.argmax(axis=1).detach().cpu()
-            train_acc = accuracy_score(y_true, y_pred)
-
-        else:
-            train_acc = 1
-
-    return train_loss, train_acc
-
-
-def test_step(engine, batch):
-
-    global model, g
-
-    with th.no_grad():
-
-        model.eval()
-        model = model.to(gpu)
-
-        g = g.to(gpu)
-
-        (idx, ) = [x.to(gpu) for x in batch]
-
-        y_pred = model(g, idx)
-        y_true = g.ndata['label'][idx]
-
-        return y_pred, y_true
-
-
 def train(g, model):
+
+    def update_feature():
+
+        """
+        Pretty sure this is the bit that uses the memory bank
+        """
+
+        global model, g, doc_mask
+        # no gradient needed, uses a large batchsize to speed up the process
+        dataloader = Data.DataLoader(
+            Data.TensorDataset(g.ndata['input_ids'][doc_mask], g.ndata['attention_mask'][doc_mask]),
+            batch_size=1024
+        )
+        with th.no_grad():
+            model = model.to(gpu)
+            model.eval()
+            cls_list = []
+            for i, batch in enumerate(dataloader):
+                input_ids, attention_mask = [x.to(gpu) for x in batch]
+                output = model.bert_model(input_ids=input_ids, attention_mask=attention_mask)[0][:, 0]
+                cls_list.append(output.cpu())
+            cls_feat = th.cat(cls_list, axis=0)
+        g = g.to(cpu)
+        g.ndata['cls_feats'][doc_mask] = cls_feat
+        return g
 
     optimizer = th.optim.Adam([
         {'params': model.bert_model.parameters(), 'lr': bert_lr},
@@ -260,8 +194,32 @@ def train(g, model):
         {'params': model.gcn.parameters(), 'lr': gcn_lr},
     ], lr=1e-3
     )
-
     scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[30], gamma=0.1)
+
+    def train_step(engine, batch):
+        global model, g, optimizer
+        model.train()
+        model = model.to(gpu)
+        g = g.to(gpu)
+        optimizer.zero_grad()
+        (idx, ) = [x.to(gpu) for x in batch]
+        optimizer.zero_grad()
+        train_mask = g.ndata['train'][idx].type(th.BoolTensor)
+        y_pred = model(g, idx)[train_mask]
+        y_true = g.ndata['label_train'][idx][train_mask]
+        loss = F.nll_loss(y_pred, y_true)
+        loss.backward()
+        optimizer.step()
+        g.ndata['cls_feats'].detach_()
+        train_loss = loss.item()
+        with th.no_grad():
+            if train_mask.sum() > 0:
+                y_true = y_true.detach().cpu()
+                y_pred = y_pred.argmax(axis=1).detach().cpu()
+                train_acc = accuracy_score(y_true, y_pred)
+            else:
+                train_acc = 1
+        return train_loss, train_acc
 
     trainer = Engine(train_step)
 
@@ -271,13 +229,22 @@ def train(g, model):
         update_feature()
         th.cuda.empty_cache()
 
-    evaluator = Engine(test_step)
+    def test_step(engine, batch):
+        global model, g
+        with th.no_grad():
+            model.eval()
+            model = model.to(gpu)
+            g = g.to(gpu)
+            (idx, ) = [x.to(gpu) for x in batch]
+            y_pred = model(g, idx)
+            y_true = g.ndata['label'][idx]
+            return y_pred, y_true
 
-    metrics = {
+    evaluator = Engine(test_step)
+    metrics={
         'acc': Accuracy(),
         'nll': Loss(th.nn.NLLLoss())
     }
-
     for n, f in metrics.items():
         f.attach(evaluator, n)
 
@@ -313,9 +280,7 @@ def train(g, model):
             log_training_results.best_val_acc = val_acc
 
     log_training_results.best_val_acc = 0
-
     g = update_feature()
-
     trainer.run(idx_loader, max_epochs=nb_epochs)
 
 
