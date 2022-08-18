@@ -45,12 +45,19 @@ class BertGCN(th.nn.Module):
             g.ndata['cls_feats'][idx] = cls_feats
         else:
             cls_feats = g.ndata['cls_feats'][idx]
+
+        # BERT predictions
         cls_logit = self.classifier(cls_feats)
         cls_pred = th.nn.Softmax(dim=1)(cls_logit)
+
+        # GCN predictions
         gcn_logit = self.gcn(g.ndata['cls_feats'], g, g.edata['edge_weight'])[idx]
         gcn_pred = th.nn.Softmax(dim=1)(gcn_logit)
+
+        # Weighted predictions
         pred = (gcn_pred+1e-10) * self.m + cls_pred * (1 - self.m)
         pred = th.log(pred)
+
         return pred
 
 

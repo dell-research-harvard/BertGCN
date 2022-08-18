@@ -192,6 +192,133 @@ def update_feature():
     return g
 
 
+def train_step(engine, batch):
+    global model, g, optimizer
+
+    model.train()
+    model = model.to(gpu)
+
+    g = g.to(gpu)
+
+    optimizer.zero_grad()
+
+    (idx, ) = [x.to(gpu) for x in batch]
+
+    optimizer.zero_grad()
+
+    train_mask = g.ndata['train'][idx].type(th.BoolTensor)
+
+    y_pred = model(g, idx)[train_mask]
+    y_true = g.ndata['label_train'][idx][train_mask]
+
+    loss = F.nll_loss(y_pred, y_true)
+    loss.backward()
+
+    optimizer.step()
+
+    g.ndata['cls_feats'].detach_()
+
+    train_loss = loss.item()
+
+    with th.no_grad():
+
+        if train_mask.sum() > 0:
+            y_true = y_true.detach().cpu()
+            y_pred = y_pred.argmax(axis=1).detach().cpu()
+            train_acc = accuracy_score(y_true, y_pred)
+
+        else:
+            train_acc = 1
+
+    return train_loss, train_acc
+
+
+def test_step(engine, batch):
+
+    global model, g
+
+    with th.no_grad():
+
+        model.eval()
+        model = model.to(gpu)
+
+        g = g.to(gpu)
+
+        (idx, ) = [x.to(gpu) for x in batch]
+
+        y_pred = model(g, idx)
+        y_true = g.ndata['label'][idx]
+
+        return y_pred, y_true
+
+
+def train(g, model):
+
+    optimizer = th.optim.Adam([
+        {'params': model.bert_model.parameters(), 'lr': bert_lr},
+        {'params': model.classifier.parameters(), 'lr': bert_lr},
+        {'params': model.gcn.parameters(), 'lr': gcn_lr},
+    ], lr=1e-3
+    )
+
+    scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[30], gamma=0.1)
+
+    trainer = Engine(train_step)
+
+    @trainer.on(Events.EPOCH_COMPLETED)
+    def reset_graph(trainer):
+        scheduler.step()
+        update_feature()
+        th.cuda.empty_cache()
+
+    evaluator = Engine(test_step)
+
+    metrics = {
+        'acc': Accuracy(),
+        'nll': Loss(th.nn.NLLLoss())
+    }
+
+    for n, f in metrics.items():
+        f.attach(evaluator, n)
+
+    @trainer.on(Events.EPOCH_COMPLETED)
+    def log_training_results(trainer):
+        evaluator.run(idx_loader_train)
+        metrics = evaluator.state.metrics
+        train_acc, train_nll = metrics["acc"], metrics["nll"]
+        evaluator.run(idx_loader_val)
+        metrics = evaluator.state.metrics
+        val_acc, val_nll = metrics["acc"], metrics["nll"]
+        evaluator.run(idx_loader_test)
+        metrics = evaluator.state.metrics
+        test_acc, test_nll = metrics["acc"], metrics["nll"]
+        logger.info(
+            "Epoch: {}  Train acc: {:.4f} loss: {:.4f}  Val acc: {:.4f} loss: {:.4f}  Test acc: {:.4f} loss: {:.4f}"
+                .format(trainer.state.epoch, train_acc, train_nll, val_acc, val_nll, test_acc, test_nll)
+        )
+        if val_acc > log_training_results.best_val_acc:
+            logger.info("New checkpoint")
+            th.save(
+                {
+                    'bert_model': model.bert_model.state_dict(),
+                    'classifier': model.classifier.state_dict(),
+                    'gcn': model.gcn.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                    'epoch': trainer.state.epoch,
+                },
+                os.path.join(
+                    ckpt_dir, 'checkpoint.pth'
+                )
+            )
+            log_training_results.best_val_acc = val_acc
+
+    log_training_results.best_val_acc = 0
+
+    g = update_feature()
+
+    trainer.run(idx_loader, max_epochs=nb_epochs)
+
+
 if __name__ == '__main__':
 
     # Set up
@@ -214,107 +341,4 @@ if __name__ == '__main__':
     g = build_graph(adj_norm, input_ids, attention_mask, y, train_mask, val_mask, test_mask, y_train, count)
 
     # Training
-
-
-    optimizer = th.optim.Adam([
-            {'params': model.bert_model.parameters(), 'lr': bert_lr},
-            {'params': model.classifier.parameters(), 'lr': bert_lr},
-            {'params': model.gcn.parameters(), 'lr': gcn_lr},
-        ], lr=1e-3
-    )
-
-    scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[30], gamma=0.1)
-
-
-    def train_step(engine, batch):
-        global model, g, optimizer
-        model.train()
-        model = model.to(gpu)
-        g = g.to(gpu)
-        optimizer.zero_grad()
-        (idx, ) = [x.to(gpu) for x in batch]
-        optimizer.zero_grad()
-        train_mask = g.ndata['train'][idx].type(th.BoolTensor)
-        y_pred = model(g, idx)[train_mask]
-        y_true = g.ndata['label_train'][idx][train_mask]
-        loss = F.nll_loss(y_pred, y_true)
-        loss.backward()
-        optimizer.step()
-        g.ndata['cls_feats'].detach_()
-        train_loss = loss.item()
-        with th.no_grad():
-            if train_mask.sum() > 0:
-                y_true = y_true.detach().cpu()
-                y_pred = y_pred.argmax(axis=1).detach().cpu()
-                train_acc = accuracy_score(y_true, y_pred)
-            else:
-                train_acc = 1
-        return train_loss, train_acc
-
-
-    trainer = Engine(train_step)
-
-
-    @trainer.on(Events.EPOCH_COMPLETED)
-    def reset_graph(trainer):
-        scheduler.step()
-        update_feature()
-        th.cuda.empty_cache()
-
-
-    def test_step(engine, batch):
-        global model, g
-        with th.no_grad():
-            model.eval()
-            model = model.to(gpu)
-            g = g.to(gpu)
-            (idx, ) = [x.to(gpu) for x in batch]
-            y_pred = model(g, idx)
-            y_true = g.ndata['label'][idx]
-            return y_pred, y_true
-
-
-    evaluator = Engine(test_step)
-    metrics={
-        'acc': Accuracy(),
-        'nll': Loss(th.nn.NLLLoss())
-    }
-    for n, f in metrics.items():
-        f.attach(evaluator, n)
-
-
-    @trainer.on(Events.EPOCH_COMPLETED)
-    def log_training_results(trainer):
-        evaluator.run(idx_loader_train)
-        metrics = evaluator.state.metrics
-        train_acc, train_nll = metrics["acc"], metrics["nll"]
-        evaluator.run(idx_loader_val)
-        metrics = evaluator.state.metrics
-        val_acc, val_nll = metrics["acc"], metrics["nll"]
-        evaluator.run(idx_loader_test)
-        metrics = evaluator.state.metrics
-        test_acc, test_nll = metrics["acc"], metrics["nll"]
-        logger.info(
-            "Epoch: {}  Train acc: {:.4f} loss: {:.4f}  Val acc: {:.4f} loss: {:.4f}  Test acc: {:.4f} loss: {:.4f}"
-            .format(trainer.state.epoch, train_acc, train_nll, val_acc, val_nll, test_acc, test_nll)
-        )
-        if val_acc > log_training_results.best_val_acc:
-            logger.info("New checkpoint")
-            th.save(
-                {
-                    'bert_model': model.bert_model.state_dict(),
-                    'classifier': model.classifier.state_dict(),
-                    'gcn': model.gcn.state_dict(),
-                    'optimizer': optimizer.state_dict(),
-                    'epoch': trainer.state.epoch,
-                },
-                os.path.join(
-                    ckpt_dir, 'checkpoint.pth'
-                )
-            )
-            log_training_results.best_val_acc = val_acc
-
-
-    log_training_results.best_val_acc = 0
-    g = update_feature()
-    trainer.run(idx_loader, max_epochs=nb_epochs)
+    train(g, model)
