@@ -145,7 +145,6 @@ def build_graph(adj_norm, input_ids, attention_mask, y, train_mask, val_mask, te
 
     print("\n Building graph ...")
 
-    # build DGL Graph
     # edges
     g = dgl.from_scipy(adj_norm.astype('float32'), eweight_name='edge_weight')
 
@@ -155,19 +154,6 @@ def build_graph(adj_norm, input_ids, attention_mask, y, train_mask, val_mask, te
         th.LongTensor(y), th.FloatTensor(train_mask), th.FloatTensor(val_mask), th.FloatTensor(test_mask)
     g.ndata['label_train'] = th.LongTensor(y_train)
     g.ndata['cls_feats'] = th.zeros((count['total nodes'], model.feat_dim))
-
-    # test
-    h = dgl.from_scipy(adj_norm.astype('float32'), eweight_name='edge_weight')
-    h.ndata['input_ids'] = input_ids
-    h.ndata['attention_mask'] = attention_mask
-    h.ndata['label'] = th.LongTensor(y)
-    h.ndata['train'] = th.FloatTensor(train_mask)
-    h.ndata['val'] = th.FloatTensor(val_mask)
-    h.ndata['test'] = th.FloatTensor(test_mask)
-    h.ndata['label_train'] = th.LongTensor(y_train)
-    h.ndata['cls_feats'] = th.zeros((count['total nodes'], model.feat_dim))
-
-    assert g == h
 
     logger.info('graph information:')
     logger.info(str(g))
