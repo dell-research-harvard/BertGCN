@@ -91,22 +91,25 @@ def load_corpus(dataset_str, batch_size=None):
 
     y, ty, ally, adj = tuple(objects)
 
+    # load documents
+    corpus_file = './data/corpus/'+dataset_str+'_shuffle.txt'
+    with open(corpus_file, 'r') as f:
+        text = f.read()
+        text = text.replace('\\', '')
+        text = text.split('\n')
+
     # Lengths of things
     with open('data/' + dataset_str + '.count.json') as f:
         count = json.load(f)
 
-    labels = np.vstack((ally, ty))
-
-    print("*******")
-    print(labels.shape)
-    print("*******")
-
-    train_mask = sample_mask(range(count['train nodes']), labels.shape[0])
-    val_mask = sample_mask(range(count['train nodes'], count['train nodes'] + count['val nodes']), labels.shape[0])
-    test_mask = sample_mask(range(count['total nodes'] - count['test nodes'], count['total nodes']), labels.shape[0])
-
-    # document mask used for update feature
+    # Masks
+    train_mask = sample_mask(range(count['train nodes']), count['total nodes'])
+    val_mask = sample_mask(range(count['train nodes'], count['train nodes']+count['val nodes']), count['total nodes'])
+    test_mask = sample_mask(range(count['total nodes']-count['test nodes'], count['total nodes']), count['total nodes'])
     doc_mask = train_mask + val_mask + test_mask
+
+    # Labels
+    labels = np.vstack((ally, ty))
 
     y_train = np.zeros(labels.shape)
     y_val = np.zeros(labels.shape)
@@ -115,14 +118,11 @@ def load_corpus(dataset_str, batch_size=None):
     y_val[val_mask, :] = labels[val_mask, :]
     y_test[test_mask, :] = labels[test_mask, :]
 
-    # load documents
-    corpus_file = './data/corpus/'+dataset_str+'_shuffle.txt'
-    with open(corpus_file, 'r') as f:
-        text = f.read()
-        text = text.replace('\\', '')
-        text = text.split('\n')
+    print("*****")
+    print(y_train)
+    print("*****")
 
-    # transform one-hot label to class ID for pytorch computation
+    # transform one-hot label to class ID for pytorch computation (used in finetuning)
     temp_y = th.LongTensor((y_train + y_val + y_test).argmax(axis=1))
     label_dict = {
         'train': temp_y[:count['train nodes']],
@@ -130,18 +130,19 @@ def load_corpus(dataset_str, batch_size=None):
         'test': temp_y[-count['test nodes']:]
     }
 
-    # transform one-hot label to class ID for pytorch computation
+    # transform one-hot label to class ID for pytorch computation (used in GCN)
     y = y_train + y_test + y_val
     y_train = y_train.argmax(axis=1)
     y = y.argmax(axis=1)
 
-    # create index loader
-    train_idx = Data.TensorDataset(th.arange(0, count['train nodes'], dtype=th.long))
-    val_idx = Data.TensorDataset(th.arange(count['train nodes'], count['train nodes'] + count['val nodes'], dtype=th.long))
-    test_idx = Data.TensorDataset(th.arange(count['total nodes'] - count['test nodes'], count['total nodes'], dtype=th.long))
-    doc_idx = Data.ConcatDataset([train_idx, val_idx, test_idx])
 
+    # create index loader
     if batch_size:
+        train_idx = Data.TensorDataset(th.arange(0, count['train nodes'], dtype=th.long))
+        val_idx = Data.TensorDataset(th.arange(count['train nodes'], count['train nodes'] + count['val nodes'], dtype=th.long))
+        test_idx = Data.TensorDataset(th.arange(count['total nodes'] - count['test nodes'], count['total nodes'], dtype=th.long))
+        doc_idx = Data.ConcatDataset([train_idx, val_idx, test_idx])
+
         idx_loader_train = Data.DataLoader(train_idx, batch_size=batch_size, shuffle=True)
         idx_loader_val = Data.DataLoader(val_idx, batch_size=batch_size)
         idx_loader_test = Data.DataLoader(test_idx, batch_size=batch_size)
