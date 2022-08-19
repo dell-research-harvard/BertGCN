@@ -127,11 +127,25 @@ def load_and_shuffle_data(dataset):
 
     # Create a sparse matrix of labels
     labels = []
-    for i in range(count['train nodes'] + count['val nodes'] + count['test nodes']):
+    for i in range(count['train nodes'] + count['val nodes']):
         doc_meta = shuffle_doc_name_list[i]
         temp = doc_meta.split('\t')
         label = temp[2]
-        one_hot = [0 for l in range(count['classes'])]
+        one_hot = [0 for l in range(len(label_list))]
+        label_index = label_list.index(label)
+        one_hot[label_index] = 1
+        labels.append(one_hot)
+
+    # Add vocab
+    for i in range(count['word nodes']):
+        one_hot = [0 for l in range(len(label_list))]
+        labels.append(one_hot)
+
+    for i in range(count['test nodes']):
+        doc_meta = shuffle_doc_name_list[i + count['train nodes'] + count['val nodes']]
+        temp = doc_meta.split('\t')
+        label = temp[2]
+        one_hot = [0 for l in range(len(label_list))]
         label_index = label_list.index(label)
         one_hot[label_index] = 1
         labels.append(one_hot)
@@ -253,7 +267,6 @@ def calc_tfidf(doc_words_list, word_id_map, vocab, count, row, col, weight):
     # dictionary of words to list of ids of all texts that use that word
     word_doc_list = {}
     for i in range(len(doc_words_list)):
-        print(i)
         doc_words = doc_words_list[i]
         words = doc_words.split()
         appeared = set()
@@ -343,6 +356,7 @@ if __name__ == '__main__':
 
     if len(sys.argv) != 2:
         sys.exit("Use: python build_graph.py <dataset>")
+
     dataset_name = sys.argv[1]
 
     shuffle_doc_words_list, vocab, word_id_map, count = load_and_shuffle_data(dataset=dataset_name)

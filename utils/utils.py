@@ -117,10 +117,6 @@ def load_corpus(dataset_str, batch_size=None):
     y_val[val_mask, :] = labels[val_mask, :]
     #y_test[test_mask, :] = labels[test_mask, :]
 
-    print(len(y_train))
-    print(len(y_val))
-    print(len(y_test))
-
     # transform one-hot label to class ID for pytorch computation (used in finetuning)
     temp_y = th.LongTensor((y_train + y_val + y_test).argmax(axis=1))
     label_dict = {
