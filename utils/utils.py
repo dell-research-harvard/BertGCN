@@ -110,21 +110,20 @@ def load_corpus(dataset_str, batch_size=None):
 
     # Reformat labels
 
-    print(labels.shape)
+    # transform one-hot label to class ID for pytorch computation
+    y = labels.argmax(axis=1)
 
     y_train = np.zeros(labels.shape)
-    y_val = np.zeros(labels.shape)
-    y_test = np.zeros(labels.shape)
     y_train[train_mask, :] = labels[train_mask, :]
-    y_val[val_mask, :] = labels[val_mask, :]
-    y_test[test_mask, :] = labels[test_mask, :]
+    y_train = y_train.argmax(axis=1)
 
-    # transform one-hot label to class ID for pytorch computation (used in finetuning)
-    temp_y = th.LongTensor((y_train + y_val + y_test).argmax(axis=1))
+    temp_y = th.LongTensor(y)
 
-    temp_y_check = th.LongTensor((labels).argmax(axis=1))
+    print(y)
+    print("********")
+    print(temp_y)
 
-    assert np.array_equal(temp_y, temp_y_check)
+    assert np.array_equal(y, temp_y)
 
     label_dict = {
         'train': temp_y[:count['train nodes']],
@@ -132,9 +131,6 @@ def load_corpus(dataset_str, batch_size=None):
         'test': temp_y[-count['test nodes']:]
     }
 
-    # transform one-hot label to class ID for pytorch computation (used in GCN)
-    y_train = y_train.argmax(axis=1)
-    y = labels.argmax(axis=1)
 
     # create index loader
     if batch_size:
