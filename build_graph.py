@@ -49,7 +49,7 @@ def custom_open_data(dataset):
     f.write(shuffle_doc_words_clean_str)
     f.close()
 
-    return shuffle_doc_words_list, corpus_label_list, datasets['train']['size'], datasets['val']['size'], datasets['test']['size']
+    return shuffle_doc_words_list_clean, corpus_label_list, datasets['train']['size'], datasets['val']['size'], datasets['test']['size']
 
 
 def orig_open_and_shuffle_data(dataset):
@@ -70,9 +70,6 @@ def orig_open_and_shuffle_data(dataset):
         elif temp[1].find('train') != -1:
             splits['train']['names'].append(line.strip())
     f.close()
-
-    print(f'{len(splits["train"]["names"])} training examples')
-    print(f'{len(splits["test"]["names"])} test examples')
 
     # Pull texts
     doc_content_list = []
@@ -133,8 +130,6 @@ def build_vocab(shuffle_doc_words_list):
             word_set.add(word)
 
     vocab = list(word_set)
-
-    print(f"Vocabulary size: {len(vocab)}")
 
     # Dictionary mapping words to unique ids
     word_id_map = {}
