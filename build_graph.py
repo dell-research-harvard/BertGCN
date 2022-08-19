@@ -2,23 +2,77 @@ import random
 import numpy as np
 import pandas as pd
 import pickle as pkl
-import scipy.sparse as sp
 from math import log
 import sys
 from tqdm import tqdm
 import json
+import re
+
+import scipy.sparse as sp
+
+from nltk.corpus import stopwords
+import nltk
+from nltk.wsd import lesk
+from nltk.corpus import wordnet as wn
+
+
+def clean_str(string):
+    """
+    Tokenization/string cleaning for all datasets except for SST.
+    Original taken from https://github.com/yoonkim/CNN_sentence/blob/master/process_data.py
+    """
+    string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
+    string = re.sub(r"\'s", " \'s", string)
+    string = re.sub(r"\'ve", " \'ve", string)
+    string = re.sub(r"n\'t", " n\'t", string)
+    string = re.sub(r"\'re", " \'re", string)
+    string = re.sub(r"\'d", " \'d", string)
+    string = re.sub(r"\'ll", " \'ll", string)
+    string = re.sub(r",", " , ", string)
+    string = re.sub(r"!", " ! ", string)
+    string = re.sub(r"\(", " \( ", string)
+    string = re.sub(r"\)", " \) ", string)
+    string = re.sub(r"\?", " \? ", string)
+    string = re.sub(r"\s{2,}", " ", string)
+    return string.strip().lower()
 
 
 def text_clean(list_of_articles):
 
-    # Todo: find out what cleaning functions were applied
+    nltk.download('stopwords')
+    stop_words = set(stopwords.words('english'))
+    print(stop_words)
 
-    return list_of_articles
+    # Calculate word frequencies (to remove rare words)
+    word_freq = {}
+    for doc_content in list_of_articles:
+        temp = clean_str(doc_content)
+        words = temp.split()
+        for word in words:
+            if word in word_freq:
+                word_freq[word] += 1
+            else:
+                word_freq[word] = 1
+
+    clean_docs = []
+    for doc_content in list_of_articles:
+        temp = clean_str(doc_content)
+        words = temp.split()
+        doc_words = []
+        for word in words:
+            # word not in stop_words and word_freq[word] >= 5
+            if word not in stop_words and word_freq[word] >= 5:
+                doc_words.append(word)
+
+        doc_str = ' '.join(doc_words).strip()
+        clean_docs.append(doc_str)
+
+    return clean_docs
 
 
 def custom_open_data(dataset):
 
-    print("\n Opening and shuffling data...")
+    print("\n Opening data...")
 
     datasets = {
         'train': {'orig': pd.read_csv('/mnt/data01/editorials/train_sets/fifth_set/clean/train.csv')},
@@ -27,17 +81,14 @@ def custom_open_data(dataset):
     }
 
     shuffle_doc_words_list_orig = []
-    shuffle_doc_words_list_clean = []
     corpus_label_list = []
-
     for split in ["train", "val", "test"]:
         datasets[split]['size'] = len(datasets[split]['orig'])
 
-        articles = datasets[split]['orig']['article']
-        shuffle_doc_words_list_orig.extend(articles)
-        shuffle_doc_words_list_clean.extend(text_clean(articles))
-
+        shuffle_doc_words_list_orig.extend(datasets[split]['orig']['article'])
         corpus_label_list.extend(datasets[split]['orig']['label'])
+
+    shuffle_doc_words_list_clean = text_clean(shuffle_doc_words_list_orig)
 
     shuffle_doc_words_orig_str = '\n'.join(shuffle_doc_words_list_orig)
     f = open('data/corpus/' + dataset + '_shuffle_orig.txt', 'w')
@@ -186,6 +237,8 @@ def reformat_data(dataset):
         shuffle_doc_words_list, corpus_label_list, real_train_size, val_size, test_size = orig_open_and_shuffle_data(dataset)
     else:
         shuffle_doc_words_list, corpus_label_list, real_train_size, val_size, test_size = custom_open_data(dataset)
+
+    print(shuffle_doc_words_list)
 
     vocab, word_id_map = build_vocab(shuffle_doc_words_list)
 
