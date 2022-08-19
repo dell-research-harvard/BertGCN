@@ -12,8 +12,6 @@ import scipy.sparse as sp
 
 from nltk.corpus import stopwords
 import nltk
-from nltk.wsd import lesk
-from nltk.corpus import wordnet as wn
 
 
 def clean_str(string):
@@ -41,6 +39,8 @@ def text_clean(list_of_articles):
 
     nltk.download('stopwords')
     stop_words = set(stopwords.words('english'))
+    stop_words.add("nan")
+    stop_words.add(",")
     print(stop_words)
 
     # Calculate word frequencies (to remove rare words)
