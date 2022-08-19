@@ -127,7 +127,7 @@ def load_corpus(dataset_str, batch_size=None):
     # transform one-hot label to class ID for pytorch computation (used in GCN)
     y = y_train + y_test + y_val
 
-    assert y == labels
+    assert np.array_equal(y, labels)
 
     y_train = y_train.argmax(axis=1)
     y = y.argmax(axis=1)
