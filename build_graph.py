@@ -236,13 +236,13 @@ def normalize_adj(adj):
     return adj.dot(d_mat_inv_sqrt).transpose().dot(d_mat_inv_sqrt).tocoo()
 
 
-def calc_tfidf(doc_list, word_id_map, vocab, count, row, col, weight):
+def calc_tfidf(doc_words_list, word_id_map, vocab, count, row, col, weight):
 
     print("\n Creating document-word edges...")
 
     # dict of the number of times each word is used in entire corpus
     word_freq = {}
-    for doc_words in doc_list:
+    for doc_words in doc_words_list:
         words = doc_words.split()
         for word in words:
             if word in word_freq:
@@ -252,11 +252,9 @@ def calc_tfidf(doc_list, word_id_map, vocab, count, row, col, weight):
 
     # dictionary of words to list of ids of all texts that use that word
     word_doc_list = {}
-    print(len(doc_list))
-    print(doc_list[3])
-    for i in range(len(doc_list)):
+    for i in range(len(doc_words_list)):
         print(i)
-        doc_words = doc_list[i]
+        doc_words = doc_words_list[i]
         words = doc_words.split()
         appeared = set()
         for word in words:
@@ -277,7 +275,7 @@ def calc_tfidf(doc_list, word_id_map, vocab, count, row, col, weight):
 
     # doc word frequency
     doc_word_freq = {}
-    for doc_id in range(len(doc_list)):
+    for doc_id in range(len(doc_words_list)):
         doc_words = shuffle_doc_words_list[doc_id]
         words = doc_words.split()
         for word in words:
@@ -289,8 +287,8 @@ def calc_tfidf(doc_list, word_id_map, vocab, count, row, col, weight):
                 doc_word_freq[doc_word_str] = 1
 
     # Calculate TF_IDF
-    for i in range(len(doc_list)):
-        doc_words = doc_list[i]
+    for i in range(len(doc_words_list)):
+        doc_words = doc_words_list[i]
         words = doc_words.split()
         doc_word_set = set()
         for word in words:
@@ -304,7 +302,7 @@ def calc_tfidf(doc_list, word_id_map, vocab, count, row, col, weight):
             else:
                 row.append(i + len(vocab))
             col.append(count['train nodes'] + j)
-            idf = log(1.0 * len(doc_list) /
+            idf = log(1.0 * len(doc_words_list) /
                       word_doc_freq[vocab[j]])
             weight.append(freq * idf)
             doc_word_set.add(word)
