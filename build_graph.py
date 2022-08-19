@@ -153,27 +153,13 @@ def load_and_shuffle_data(dataset):
     return shuffle_doc_words_list, vocab, word_id_map, count
 
 
-def normalize_adj(adj):
-    """Symmetrically normalize adjacency matrix."""
-    adj = sp.coo_matrix(adj)
-    rowsum = np.array(adj.sum(1))
-    d_inv_sqrt = np.power(rowsum, -0.5).flatten()
-    d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
-    d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
-    return adj.dot(d_mat_inv_sqrt).transpose().dot(d_mat_inv_sqrt).tocoo()
-
-
-def create_edges(shuffle_doc_words_list, vocab, word_id_map, count, window_size, dataset):
-
-    '''
-    Calculate PMI, for word-word edges
-    '''
+def calc_pmi(doc_list, window_size, count, row=[], col=[], weight=[]):
 
     print("\n Creating word-word edges...")
 
     # Create list of sliding windows, moving by one word each time
     windows = []
-    for doc_words in shuffle_doc_words_list:
+    for doc_words in doc_list:
         words = doc_words.split()
         length = len(words)
         if length <= window_size:
@@ -220,20 +206,16 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, count, window_size,
                     word_pair_count[word_pair_str] = 1
 
     # Calcuate PMI
-    row = []
-    col = []
-    weight = []
-
     num_window = len(windows)
 
     for key in word_pair_count:
         temp = key.split(',')
         i = int(temp[0])
         j = int(temp[1])
-        count = word_pair_count[key]
+        word_count = word_pair_count[key]
         word_freq_i = word_window_freq[vocab[i]]
         word_freq_j = word_window_freq[vocab[j]]
-        pmi = log((1.0 * count / num_window) /
+        pmi = log((1.0 * word_count / num_window) /
                   (1.0 * word_freq_i * word_freq_j/(num_window * num_window)))
         if pmi <= 0:
             continue
@@ -241,15 +223,26 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, count, window_size,
         col.append(count['train nodes'] + j)
         weight.append(pmi)
 
-    '''
-    Calculate TF-IDF, for document-word edges 
-    '''
+    return row, col, weight
+
+
+def normalize_adj(adj):
+    """Symmetrically normalize adjacency matrix."""
+    adj = sp.coo_matrix(adj)
+    rowsum = np.array(adj.sum(1))
+    d_inv_sqrt = np.power(rowsum, -0.5).flatten()
+    d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
+    d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
+    return adj.dot(d_mat_inv_sqrt).transpose().dot(d_mat_inv_sqrt).tocoo()
+
+
+def calc_tfidf(doc_list, word_id_map, vocab, count, row, col, weight):
 
     print("\n Creating document-word edges...")
 
     # dict of the number of times each word is used in entire corpus
     word_freq = {}
-    for doc_words in shuffle_doc_words_list:
+    for doc_words in doc_list:
         words = doc_words.split()
         for word in words:
             if word in word_freq:
@@ -259,8 +252,8 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, count, window_size,
 
     # dictionary of words to list of ids of all texts that use that word
     word_doc_list = {}
-    for i in range(len(shuffle_doc_words_list)):
-        doc_words = shuffle_doc_words_list[i]
+    for i in range(len(doc_list)):
+        doc_words = doc_list[i]
         words = doc_words.split()
         appeared = set()
         for word in words:
@@ -281,7 +274,7 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, count, window_size,
 
     # doc word frequency
     doc_word_freq = {}
-    for doc_id in range(len(shuffle_doc_words_list)):
+    for doc_id in range(len(doc_list)):
         doc_words = shuffle_doc_words_list[doc_id]
         words = doc_words.split()
         for word in words:
@@ -293,8 +286,8 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, count, window_size,
                 doc_word_freq[doc_word_str] = 1
 
     # Calculate TF_IDF
-    for i in range(len(shuffle_doc_words_list)):
-        doc_words = shuffle_doc_words_list[i]
+    for i in range(len(doc_list)):
+        doc_words = doc_list[i]
         words = doc_words.split()
         doc_word_set = set()
         for word in words:
@@ -308,21 +301,34 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, count, window_size,
             else:
                 row.append(i + len(vocab))
             col.append(count['train nodes'] + j)
-            idf = log(1.0 * len(shuffle_doc_words_list) /
+            idf = log(1.0 * len(doc_list) /
                       word_doc_freq[vocab[j]])
             weight.append(freq * idf)
             doc_word_set.add(word)
 
-    '''
-    Put this all together and save  
-    '''
+    return row, col, weight
 
+
+def create_edges(shuffle_doc_words_list, vocab, word_id_map, count, window_size, dataset):
+
+    row = []
+    col = []
+    weight = []
+
+    # Calculate PMI, for word-word edges
+    row, col, weight = calc_pmi(shuffle_doc_words_list, window_size, count, row, col, weight)
+
+    # Calculate TF-IDF, for document-word edges
+    row, col, weight = calc_tfidf(shuffle_doc_words_list, word_id_map, vocab, count, row, col, weight)
+
+    # Combine into sparse matrix
     adj = sp.csr_matrix(
         (weight, (row, col)), shape=(count['total nodes'], count['total nodes']))
 
     # Make symmetric across main diagonal, by taking largest value
     adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
 
+    # Normalise
     adj_norm = normalize_adj(adj + sp.eye(adj.shape[0]))
 
     print("Weighted edge matrix size:", adj.shape)
