@@ -51,7 +51,7 @@ def load_parameters():
 
 def tokenize_data(text, count, label_dict, model, max_length):
 
-    print("Tokenizing data ...")
+    print("\n Tokenizing data ...")
 
     # Tokenize documents
     def encode_input(text, tokenizer):
@@ -134,7 +134,7 @@ def test_step(engine, batch):
 
 def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs):
 
-    print("Training ...")
+    print("\n Training ...")
 
     # Training
     trainer = Engine(train_step)

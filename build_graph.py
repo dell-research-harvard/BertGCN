@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import pandas as pd
 import pickle as pkl
 import scipy.sparse as sp
 from math import log
@@ -8,7 +9,50 @@ from tqdm import tqdm
 import json
 
 
-def open_and_shuffle_data(dataset):
+def text_clean(list_of_articles):
+
+    # Todo: find out what cleaning functions were applied
+
+    return list_of_articles
+
+
+def custom_open_data(dataset):
+
+    print("\n Opening and shuffling data...")
+
+    datasets = {
+        'train': {'orig': pd.read_csv('/mnt/data01/editorials/train_sets/fifth_set/clean/train.csv')},
+        'val': {'orig': pd.read_csv('/mnt/data01/editorials/train_sets/fifth_set/clean/eval.csv')},
+        'test': {'orig': pd.read_csv('/mnt/data01/editorials/train_sets/fifth_set/clean/test.csv')}
+    }
+
+    shuffle_doc_words_list_orig = []
+    shuffle_doc_words_list_clean = []
+    corpus_label_list = []
+
+    for split in ["train", "val", "test"]:
+        datasets[split]['size'] = len(datasets[split]['orig'])
+
+        articles = datasets[split]['orig']['article']
+        shuffle_doc_words_list_orig.extend(articles)
+        shuffle_doc_words_list_clean.extend(text_clean(articles))
+
+        corpus_label_list.extend(datasets[split]['orig']['label'])
+
+    shuffle_doc_words_orig_str = '\n'.join(shuffle_doc_words_list_orig)
+    f = open('data/corpus/' + dataset + '_shuffle_orig.txt', 'w')
+    f.write(shuffle_doc_words_orig_str)
+    f.close()
+
+    shuffle_doc_words_clean_str = '\n'.join(shuffle_doc_words_list_clean)
+    f = open('data/corpus/' + dataset + '_shuffle.txt', 'w')
+    f.write(shuffle_doc_words_clean_str)
+    f.close()
+
+    return shuffle_doc_words_list, corpus_label_list, datasets['train']['size'], datasets['val']['size'], datasets['test']['size']
+
+
+def orig_open_and_shuffle_data(dataset):
 
     print("\n Opening and shuffling data...")
 
@@ -64,13 +108,20 @@ def open_and_shuffle_data(dataset):
     f.write(shuffle_doc_words_str)
     f.close()
 
+    # Create a list of labels
+    corpus_label_list = []
+    for doc_meta in shuffle_doc_name_list:
+        temp = doc_meta.split('\t')
+        label = temp[2]
+        corpus_label_list.append(label)
+
     # Split 10% of the training data off to be the eval set
     train_size = len(splits['train']['ids'])
     val_size = int(0.1 * train_size)
     real_train_size = train_size - val_size  # - int(0.5 * train_size)
     test_size = len(splits['test']['ids'])
 
-    return shuffle_doc_words_list, shuffle_doc_name_list, real_train_size, val_size, test_size
+    return shuffle_doc_words_list, corpus_label_list, real_train_size, val_size, test_size
 
 
 def build_vocab(shuffle_doc_words_list):
@@ -93,23 +144,17 @@ def build_vocab(shuffle_doc_words_list):
     return vocab, word_id_map
 
 
-def create_label_matrix(shuffle_doc_name_list, dataset, vocab, real_train_size, val_size, test_size):
+def create_label_matrix(corpus_label_list, dataset, vocab, real_train_size, val_size, test_size):
 
     print("\n Creating label matrix...")
 
     # Create list of unique labels
-    label_set = set()
-    for doc_meta in shuffle_doc_name_list:
-        temp = doc_meta.split('\t')
-        label_set.add(temp[2])
-    label_list = list(label_set)
+    label_list = list(set(corpus_label_list))
 
     # Create a sparse matrix of labels
     labels = []
     for i in range(real_train_size + val_size):
-        doc_meta = shuffle_doc_name_list[i]
-        temp = doc_meta.split('\t')
-        label = temp[2]
+        label = corpus_label_list[i]
         one_hot = [0 for l in range(len(label_list))]
         label_index = label_list.index(label)
         one_hot[label_index] = 1
@@ -121,9 +166,7 @@ def create_label_matrix(shuffle_doc_name_list, dataset, vocab, real_train_size, 
         labels.append(one_hot)
 
     for i in range(test_size):
-        doc_meta = shuffle_doc_name_list[i + real_train_size + val_size]
-        temp = doc_meta.split('\t')
-        label = temp[2]
+        label = corpus_label_list[i + real_train_size + val_size]
         one_hot = [0 for l in range(len(label_list))]
         label_index = label_list.index(label)
         one_hot[label_index] = 1
@@ -144,14 +187,14 @@ def reformat_data(dataset):
 
     # Check dataset
     datasets = ['20ng', 'R8', 'R52', 'ohsumed', 'mr']
-    if dataset not in datasets:
-        sys.exit("wrong dataset name")
-
-    shuffle_doc_words_list, shuffle_doc_name_list, real_train_size, val_size, test_size = open_and_shuffle_data(dataset)
+    if dataset in datasets:
+        shuffle_doc_words_list, corpus_label_list, real_train_size, val_size, test_size = orig_open_and_shuffle_data(dataset)
+    else:
+        shuffle_doc_words_list, corpus_label_list, real_train_size, val_size, test_size = custom_open_data(dataset)
 
     vocab, word_id_map = build_vocab(shuffle_doc_words_list)
 
-    nb_labels = create_label_matrix(shuffle_doc_name_list, dataset, vocab, real_train_size, val_size, test_size)
+    nb_labels = create_label_matrix(corpus_label_list, dataset, vocab, real_train_size, val_size, test_size)
 
     # Dictionary of counts of useful things
     count = {

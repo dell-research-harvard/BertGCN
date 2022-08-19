@@ -58,26 +58,11 @@ def load_corpus(dataset_str, batch_size=None):
     """
     Loads input corpus from gcn/data directory
 
-    ind.dataset_str.y => the one-hot labels of the labeled training docs as numpy.ndarray object;
-    ind.dataset_str.ty => the one-hot labels of the test docs as numpy.ndarray object;
-    ind.dataset_str.ally => the labels for instances in ind.dataset_str.allx as numpy.ndarray object;
-    ind.dataset_str.adj => adjacency matrix of word/doc nodes as scipy.sparse.csr.csr_matrix object;
-    ind.dataset_str.train.index => the indices of training docs in original doc list.
-
-    All objects above must be saved using python pickle module.
+    ind.dataset_str.abels => sparse matrix of nodes and labels
+    ind.dataset_str.adj => adjacency matrix of word/doc nodes with edge weights
+    dataset_str.count.json => dictionary of edge size
 
     :param dataset_str: Dataset name
-    :return: ~todo: update
-    - adj: adj (unchanged)
-    - features: allx and tx vertically stacked, in lil format
-    - y_train: np.array of length=train+val+test and width=n labels, with 1 if train data y is label x, 0 otherwise
-    - y_val: np.array of length=train+val+test and width=n labels, with 1 if val data y is label x, 0 otherwise
-    - y_test: np.array of length=train+val+test and width=n labels, with 1 if test data y is label x, 0 otherwise
-    - train_mask: vector of length train+val+test, where 0:len(train) = 1, 0 otherwise
-    - val_mask: vector of length train+val+test, where len(train):len(train) + len(val) = 1, 0 otherwise
-    - test_mask: vector of length train+val+test, where len(train) + len(val):end = 1, 0 otherwise
-    - train_size: length of train data (inc eval)
-    - test_size: length of test data
     """
 
     names = ['labels', 'adj']
