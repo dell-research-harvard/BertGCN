@@ -253,6 +253,7 @@ def calc_tfidf(doc_list, word_id_map, vocab, count, row, col, weight):
     # dictionary of words to list of ids of all texts that use that word
     word_doc_list = {}
     print(len(doc_list))
+    print(doc_list[3])
     for i in range(len(doc_list)):
         print(i)
         doc_words = doc_list[i]
