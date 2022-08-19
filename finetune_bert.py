@@ -4,7 +4,6 @@ import shutil
 from sklearn.metrics import accuracy_score
 
 import torch.nn.functional as F
-import torch.utils.data as Data
 from torch.optim import lr_scheduler
 
 from ignite.engine import Events, create_supervised_evaluator, create_supervised_trainer, Engine
@@ -22,7 +21,7 @@ def load_parameters():
     parser.add_argument('--batch_size', type=int, default=128)
     parser.add_argument('--nb_epochs', type=int, default=60)
     parser.add_argument('--bert_lr', type=float, default=1e-4)
-    parser.add_argument('--dataset', default='20ng', choices=['20ng', 'R8', 'R52', 'ohsumed', 'mr'])
+    parser.add_argument('--dataset', default='20ng', choices=['20ng', 'R8', 'R52', 'ohsumed', 'mr', 'edit'])
     parser.add_argument('--bert_init', type=str, default='roberta-base',
                         choices=['roberta-base', 'roberta-large', 'bert-base-uncased', 'bert-large-uncased'])
     parser.add_argument('--checkpoint_dir', default=None, help='checkpoint directory, [bert_init]_[dataset] if not specified')

@@ -41,7 +41,6 @@ def text_clean(list_of_articles):
     stop_words = set(stopwords.words('english'))
     stop_words.add("nan")
     stop_words.add(",")
-    print(stop_words)
 
     # Calculate word frequencies (to remove rare words)
     word_freq = {}
@@ -89,12 +88,6 @@ def custom_open_data(dataset):
         corpus_label_list.extend(datasets[split]['orig']['label'])
 
     shuffle_doc_words_list_clean = text_clean(shuffle_doc_words_list_orig)
-
-    for i in range(len(shuffle_doc_words_list_orig)):
-        print(shuffle_doc_words_list_orig[i])
-        print("***")
-        print(shuffle_doc_words_list_clean[i])
-        print("*************************")
 
     shuffle_doc_words_orig_str = '\n'.join(shuffle_doc_words_list_orig)
     f = open('data/corpus/' + dataset + '_shuffle_orig.txt', 'w')
