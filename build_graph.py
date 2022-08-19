@@ -90,6 +90,12 @@ def custom_open_data(dataset):
 
     shuffle_doc_words_list_clean = text_clean(shuffle_doc_words_list_orig)
 
+    for i in range(len(shuffle_doc_words_list_orig)):
+        print(shuffle_doc_words_list_orig[i])
+        print("***")
+        print(shuffle_doc_words_list_clean[i])
+        print("*************************")
+
     shuffle_doc_words_orig_str = '\n'.join(shuffle_doc_words_list_orig)
     f = open('data/corpus/' + dataset + '_shuffle_orig.txt', 'w')
     f.write(shuffle_doc_words_orig_str)
@@ -237,8 +243,6 @@ def reformat_data(dataset):
         shuffle_doc_words_list, corpus_label_list, real_train_size, val_size, test_size = orig_open_and_shuffle_data(dataset)
     else:
         shuffle_doc_words_list, corpus_label_list, real_train_size, val_size, test_size = custom_open_data(dataset)
-
-    print(shuffle_doc_words_list)
 
     vocab, word_id_map = build_vocab(shuffle_doc_words_list)
 
