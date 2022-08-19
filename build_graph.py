@@ -8,22 +8,15 @@ from tqdm import tqdm
 import json
 
 
-def load_and_shuffle_data(dataset):
-
-    """
-    Open data
-    """
+def open_and_shuffle_data(dataset):
 
     print("\n Opening and shuffling data...")
-
-    # Check dataset
-    datasets = ['20ng', 'R8', 'R52', 'ohsumed', 'mr']
-    if dataset not in datasets:
-        sys.exit("wrong dataset name")
 
     # Pull text ids, split (test/train) and label
     doc_name_list = []
     splits = {'train': {'names': [], 'ids': []}, 'test': {'names': [], 'ids': []}}
+
+    # Todo: get rid of the whole splits thing - you just need the shuffled docs
 
     f = open('data/' + dataset + '.txt', 'r')
     lines = f.readlines()
@@ -77,19 +70,13 @@ def load_and_shuffle_data(dataset):
     train_size = len(splits['train']['ids'])
     val_size = int(0.1 * train_size)
     real_train_size = train_size - val_size  # - int(0.5 * train_size)
+    test_size = len(splits['test']['ids'])
 
-    # Dictionary of counts of useful things
-    count = {
-        'train nodes': real_train_size,
-        'val nodes': val_size,
-        'test nodes': len(splits['test']['ids']),
-    }
+    return shuffle_doc_words_list, shuffle_doc_name_list, real_train_size, val_size, test_size
 
-    """
-    Create list of all words in data
-    """
 
-    # Build vocab
+def build_vocab(shuffle_doc_words_list):
+
     word_set = set()
     for doc_words in shuffle_doc_words_list:
         words = doc_words.split()
@@ -105,13 +92,10 @@ def load_and_shuffle_data(dataset):
     for i in range(len(vocab)):
         word_id_map[vocab[i]] = i
 
-    # Add counts to count dict
-    count['total nodes'] = train_size + len(splits['test']['ids']) + len(vocab)
-    count['word nodes'] = len(vocab)
+    return vocab, word_id_map
 
-    """
-    Create sparse label matrix 
-    """
+
+def create_label_matrix(shuffle_doc_name_list, dataset, vocab, real_train_size, val_size, test_size):
 
     print("\n Creating label matrix...")
 
@@ -122,12 +106,9 @@ def load_and_shuffle_data(dataset):
         label_set.add(temp[2])
     label_list = list(label_set)
 
-    # Add to count dict
-    count['classes'] = len(label_list)
-
     # Create a sparse matrix of labels
     labels = []
-    for i in range(count['train nodes'] + count['val nodes']):
+    for i in range(real_train_size + val_size):
         doc_meta = shuffle_doc_name_list[i]
         temp = doc_meta.split('\t')
         label = temp[2]
@@ -137,12 +118,12 @@ def load_and_shuffle_data(dataset):
         labels.append(one_hot)
 
     # Add vocab
-    for i in range(count['word nodes']):
+    for i in range(len(vocab)):
         one_hot = [0 for l in range(len(label_list))]
         labels.append(one_hot)
 
-    for i in range(count['test nodes']):
-        doc_meta = shuffle_doc_name_list[i + count['train nodes'] + count['val nodes']]
+    for i in range(test_size):
+        doc_meta = shuffle_doc_name_list[i + real_train_size + val_size]
         temp = doc_meta.split('\t')
         label = temp[2]
         one_hot = [0 for l in range(len(label_list))]
@@ -158,7 +139,32 @@ def load_and_shuffle_data(dataset):
     pkl.dump(labels, f)
     f.close()
 
-    # Save count dict
+    return len(label_list)
+
+
+def reformat_data(dataset):
+
+    # Check dataset
+    datasets = ['20ng', 'R8', 'R52', 'ohsumed', 'mr']
+    if dataset not in datasets:
+        sys.exit("wrong dataset name")
+
+    shuffle_doc_words_list, shuffle_doc_name_list, real_train_size, val_size, test_size = open_and_shuffle_data(dataset)
+
+    vocab, word_id_map = build_vocab(shuffle_doc_words_list)
+
+    nb_labels = create_label_matrix(shuffle_doc_name_list, dataset, vocab, real_train_size, val_size, test_size)
+
+    # Dictionary of counts of useful things
+    count = {
+        'train nodes': real_train_size,
+        'val nodes': val_size,
+        'test nodes': test_size,
+        'total nodes': real_train_size + val_size + test_size + len(vocab),
+        'word nodes': len(vocab),
+        'classes': nb_labels
+    }
+
     with open('data/' + dataset + '.count.json', 'w') as f:
         json.dump(count, f, indent=4)
 
@@ -313,7 +319,7 @@ def calc_tfidf(doc_words_list, word_id_map, vocab, count, row, col, weight):
             if i < count['train nodes']:
                 row.append(i)
             else:
-                row.append(i + len(vocab))
+                row.append(i + count['word nodes'])
             col.append(count['train nodes'] + j)
             idf = log(1.0 * len(doc_words_list) /
                       word_doc_freq[vocab[j]])
@@ -359,6 +365,6 @@ if __name__ == '__main__':
 
     dataset_name = sys.argv[1]
 
-    shuffle_doc_words_list, vocab, word_id_map, count = load_and_shuffle_data(dataset=dataset_name)
+    shuffle_doc_words_list, vocab, word_id_map, count = reformat_data(dataset=dataset_name)
 
     create_edges(shuffle_doc_words_list, vocab, word_id_map, count, window_size=20, dataset=dataset_name)
