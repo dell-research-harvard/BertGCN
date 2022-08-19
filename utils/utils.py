@@ -109,6 +109,9 @@ def load_corpus(dataset_str, batch_size=None):
     doc_mask = train_mask + val_mask + test_mask
 
     # Reformat labels
+
+    print(labels.shape)
+
     y_train = np.zeros(labels.shape)
     y_val = np.zeros(labels.shape)
     y_test = np.zeros(labels.shape)
@@ -127,7 +130,7 @@ def load_corpus(dataset_str, batch_size=None):
     # transform one-hot label to class ID for pytorch computation (used in GCN)
     y = y_train + y_test + y_val
 
-    assert np.array_equal(y, labels)
+    print(y.shape)
 
     y_train = y_train.argmax(axis=1)
     y = y.argmax(axis=1)
