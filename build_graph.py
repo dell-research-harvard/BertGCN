@@ -16,8 +16,6 @@ def open_and_shuffle_data(dataset):
     doc_name_list = []
     splits = {'train': {'names': [], 'ids': []}, 'test': {'names': [], 'ids': []}}
 
-    # Todo: get rid of the whole splits thing - you just need the shuffled docs
-
     f = open('data/' + dataset + '.txt', 'r')
     lines = f.readlines()
     for line in lines:
@@ -246,16 +244,6 @@ def calc_pmi(doc_list, window_size, count, row=[], col=[], weight=[]):
     return row, col, weight
 
 
-def normalize_adj(adj):
-    """Symmetrically normalize adjacency matrix."""
-    adj = sp.coo_matrix(adj)
-    rowsum = np.array(adj.sum(1))
-    d_inv_sqrt = np.power(rowsum, -0.5).flatten()
-    d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
-    d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
-    return adj.dot(d_mat_inv_sqrt).transpose().dot(d_mat_inv_sqrt).tocoo()
-
-
 def calc_tfidf(doc_words_list, word_id_map, vocab, count, row, col, weight):
 
     print("\n Creating document-word edges...")
@@ -327,6 +315,16 @@ def calc_tfidf(doc_words_list, word_id_map, vocab, count, row, col, weight):
             doc_word_set.add(word)
 
     return row, col, weight
+
+
+def normalize_adj(adj):
+    """Symmetrically normalize adjacency matrix."""
+    adj = sp.coo_matrix(adj)
+    rowsum = np.array(adj.sum(1))
+    d_inv_sqrt = np.power(rowsum, -0.5).flatten()
+    d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
+    d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
+    return adj.dot(d_mat_inv_sqrt).transpose().dot(d_mat_inv_sqrt).tocoo()
 
 
 def create_edges(shuffle_doc_words_list, vocab, word_id_map, count, window_size, dataset):
