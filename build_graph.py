@@ -7,8 +7,6 @@ import sys
 from tqdm import tqdm
 import json
 
-from utils import *
-
 
 def load_and_shuffle_data(dataset):
 
@@ -111,7 +109,6 @@ def load_and_shuffle_data(dataset):
     count['total nodes'] = train_size + len(splits['test']['ids']) + len(vocab)
     count['word nodes'] = len(vocab)
 
-
     """
     Create sparse label matrix 
     """
@@ -154,6 +151,16 @@ def load_and_shuffle_data(dataset):
     print('Data: {}'.format(str(count)))
 
     return shuffle_doc_words_list, vocab, word_id_map, count
+
+
+def normalize_adj(adj):
+    """Symmetrically normalize adjacency matrix."""
+    adj = sp.coo_matrix(adj)
+    rowsum = np.array(adj.sum(1))
+    d_inv_sqrt = np.power(rowsum, -0.5).flatten()
+    d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
+    d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
+    return adj.dot(d_mat_inv_sqrt).transpose().dot(d_mat_inv_sqrt).tocoo()
 
 
 def create_edges(shuffle_doc_words_list, vocab, word_id_map, count, window_size, dataset):
@@ -218,8 +225,6 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, count, window_size,
     weight = []
 
     num_window = len(windows)
-    train_size = count['train nodes']
-    test_size = count['test nodes']
 
     for key in word_pair_count:
         temp = key.split(',')
@@ -232,8 +237,8 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, count, window_size,
                   (1.0 * word_freq_i * word_freq_j/(num_window * num_window)))
         if pmi <= 0:
             continue
-        row.append(train_size + i)
-        col.append(train_size + j)
+        row.append(count['train nodes'] + i)
+        col.append(count['train nodes'] + j)
         weight.append(pmi)
 
     '''
@@ -298,11 +303,11 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, count, window_size,
             j = word_id_map[word]
             key = str(i) + ',' + str(j)
             freq = doc_word_freq[key]
-            if i < train_size:
+            if i < count['train nodes']:
                 row.append(i)
             else:
                 row.append(i + len(vocab))
-            col.append(train_size + j)
+            col.append(count['train nodes'] + j)
             idf = log(1.0 * len(shuffle_doc_words_list) /
                       word_doc_freq[vocab[j]])
             weight.append(freq * idf)
@@ -312,9 +317,8 @@ def create_edges(shuffle_doc_words_list, vocab, word_id_map, count, window_size,
     Put this all together and save  
     '''
 
-    node_size = train_size + len(vocab) + test_size
     adj = sp.csr_matrix(
-        (weight, (row, col)), shape=(node_size, node_size))
+        (weight, (row, col)), shape=(count['total nodes'], count['total nodes']))
 
     # Make symmetric across main diagonal, by taking largest value
     adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
