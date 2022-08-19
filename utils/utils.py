@@ -118,19 +118,11 @@ def load_corpus(dataset_str, batch_size=None):
     y_train = y_train.argmax(axis=1)
 
     temp_y = th.LongTensor(y)
-
-    print(y)
-    print("********")
-    print(temp_y)
-
-    assert np.array_equal(y, temp_y)
-
     label_dict = {
         'train': temp_y[:count['train nodes']],
         'val': temp_y[count['train nodes']:count['train nodes'] + count['val nodes']],
         'test': temp_y[-count['test nodes']:]
     }
-
 
     # create index loader
     if batch_size:
@@ -149,4 +141,3 @@ def load_corpus(dataset_str, batch_size=None):
 
     else:
         return y, y_train, train_mask, val_mask, test_mask, doc_mask, adj, text, count, label_dict
-
