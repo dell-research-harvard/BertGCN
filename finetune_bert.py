@@ -161,10 +161,10 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs):
         evaluator.run(data_loader['test'])
         metrics = evaluator.state.metrics
         test_acc, test_prec, test_rec, test_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["nll"]
-        logger.info(
-            "\rEpoch: {}  \n TRAIN acc: {:.4f} prec: {:.4f} rec: {:.4f} loss: {:.4f}  \n VAL acc: {:.4f} prec: {:.4f} rec: {:.4f}  loss: {:.4f}  \n TEST acc: {:.4f} prec: {:.4f} rec: {:.4f} loss: {:.4f}"
-                .format(trainer.state.epoch, train_acc, train_prec, train_rec, train_nll, val_acc, val_prec, val_rec, val_nll, test_acc, test_prec, test_rec, test_nll)
-        )
+        logger.info("\rEpoch: {}".format(trainer.state.epoch))
+        logger.info(" TRAIN acc: {:.4f} prec: {:.4f} rec: {:.4f} loss: {:.4f}".format(train_acc, str(train_prec), str(train_rec), train_nll))
+        logger.info(" VAL acc: {:.4f} prec: {:.4f} rec: {:.4f} loss: {:.4f}".format(val_acc, str(val_prec), str(val_rec), val_nll))
+        logger.info(" TEST acc: {:.4f} prec: {:.4f} rec: {:.4f} loss: {:.4f}".format(test_acc, str(test_prec), str(test_rec), test_nll))
 
         val_f1 = (val_prec * val_rec * 2 / (val_prec + val_rec))
 
