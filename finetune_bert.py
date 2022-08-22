@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from torch.optim import lr_scheduler
 
 from ignite.engine import Events, create_supervised_evaluator, create_supervised_trainer, Engine
-from ignite.metrics import Accuracy, Loss
+from ignite.metrics import Accuracy, Precision, Recall, Loss
 
 from utils import *
 from model import BertClassifier
@@ -142,6 +142,8 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs):
 
     metrics = {
         'acc': Accuracy(),
+        'prec': Precision(),
+        'rec': Recall(),
         'nll': Loss(th.nn.CrossEntropyLoss())
     }
 
@@ -152,18 +154,21 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs):
     def log_training_results(trainer):
         evaluator.run(data_loader['train'])
         metrics = evaluator.state.metrics
-        train_acc, train_nll = metrics["acc"], metrics["nll"]
+        train_acc, train_prec, train_rec, train_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["nll"]
         evaluator.run(data_loader['val'])
         metrics = evaluator.state.metrics
-        val_acc, val_nll = metrics["acc"], metrics["nll"]
+        val_acc, val_prec, val_rec, val_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["nll"]
         evaluator.run(data_loader['test'])
         metrics = evaluator.state.metrics
-        test_acc, test_nll = metrics["acc"], metrics["nll"]
+        test_acc, test_prec, test_rec, test_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["nll"]
         logger.info(
-            "\rEpoch: {}  Train acc: {:.4f} loss: {:.4f}  Val acc: {:.4f} loss: {:.4f}  Test acc: {:.4f} loss: {:.4f}"
-                .format(trainer.state.epoch, train_acc, train_nll, val_acc, val_nll, test_acc, test_nll)
+            "\rEpoch: {}  \n TRAIN acc: {:.4f} prec: {:.4f} rec: {:.4f} loss: {:.4f}  \n VAL acc: {:.4f} prec: {:.4f} rec: {:.4f}  loss: {:.4f}  \n TEST acc: {:.4f} prec: {:.4f} rec: {:.4f} loss: {:.4f}"
+                .format(trainer.state.epoch, train_acc, train_prec, train_rec, train_nll, val_acc, val_prec, val_rec, val_nll, test_acc, test_prec, test_rec, test_nll)
         )
-        if val_acc > log_training_results.best_val_acc:
+
+        val_f1 = (val_prec * val_rec * 2 / (val_prec + val_rec))
+
+        if val_f1 > log_training_results.best_val_f1:
             logger.info("New checkpoint")
             th.save(
                 {
@@ -176,10 +181,10 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs):
                     ckpt_dir, 'checkpoint.pth'
                 )
             )
-            log_training_results.best_val_acc = val_acc
+            log_training_results.best_val_f1 = val_f1
         scheduler.step()
 
-    log_training_results.best_val_acc = 0
+    log_training_results.best_val_f1 = 0
 
     trainer.run(data_loader['train'], max_epochs=nb_epochs)
 
