@@ -74,9 +74,9 @@ def custom_open_data(dataset):
     print("\n Opening data...")
 
     datasets = {
-        'train': {'orig': pd.read_csv('/mnt/data01/editorials/train_sets/fifth_set/clean/train.csv')},
-        'val': {'orig': pd.read_csv('/mnt/data01/editorials/train_sets/fifth_set/clean/eval.csv')},
-        'test': {'orig': pd.read_csv('/mnt/data01/editorials/train_sets/fifth_set/clean/test.csv')}
+        'train': {'orig': pd.read_csv('/mnt/data01/editorials/train_sets/seventh_set/clean/train.csv')},
+        'val': {'orig': pd.read_csv('/mnt/data01/editorials/train_sets/seventh_set/clean/eval.csv')},
+        'test': {'orig': pd.read_csv('/mnt/data01/editorials/train_sets/seventh_set/clean/test.csv')}
     }
 
     shuffle_doc_words_list_orig = []
