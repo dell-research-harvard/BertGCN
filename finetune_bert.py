@@ -154,19 +154,20 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs):
     def log_training_results(trainer):
         evaluator.run(data_loader['train'])
         metrics = evaluator.state.metrics
-        train_acc, train_prec, train_rec, train_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["nll"]
+        train_acc, train_prec, train_rec, train_nll = metrics["acc"], metrics["prec"][0], metrics["rec"][0], metrics["nll"]
+        train_f1 = (train_prec * train_rec * 2 / (train_prec + train_rec))
         evaluator.run(data_loader['val'])
         metrics = evaluator.state.metrics
-        val_acc, val_prec, val_rec, val_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["nll"]
+        val_acc, val_prec, val_rec, val_nll = metrics["acc"], metrics["prec"][0], metrics["rec"][0], metrics["nll"]
+        val_f1 = (val_prec * val_rec * 2 / (val_prec + val_rec))
         evaluator.run(data_loader['test'])
         metrics = evaluator.state.metrics
-        test_acc, test_prec, test_rec, test_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["nll"]
+        test_acc, test_prec, test_rec, test_nll = metrics["acc"], metrics["prec"][0], metrics["rec"][0], metrics["nll"]
+        test_f1 = (test_prec * test_rec * 2 / (test_prec + test_rec))
         logger.info("\rEpoch: {}".format(trainer.state.epoch))
-        logger.info(" TRAIN acc: {:.4f} prec: {} rec: {} loss: {:.4f}".format(train_acc, str(train_prec), str(train_rec), train_nll))
-        logger.info(" VAL acc: {:.4f} prec: {} rec: {} loss: {:.4f}".format(val_acc, str(val_prec), str(val_rec), val_nll))
-        logger.info(" TEST acc: {:.4f} prec: {} rec: {} loss: {:.4f}".format(test_acc, str(test_prec), str(test_rec), test_nll))
-
-        val_f1 = (val_prec * val_rec * 2 / (val_prec + val_rec))
+        logger.info(" TRAIN acc: {:.4f} prec: {} rec: {} f1:{} loss: {:.4f}".format(train_acc, train_prec, train_rec, train_f1, train_nll))
+        logger.info(" VAL acc: {:.4f} prec: {} rec: {} f1:{} loss: {:.4f}".format(val_acc, val_prec, val_rec, val_f1, val_nll))
+        logger.info(" TEST acc: {:.4f} prec: {} rec: {} f1:{} loss: {:.4f}".format(test_acc, test_prec, test_rec, test_f1, test_nll))
 
         if val_f1 > log_training_results.best_val_f1:
             logger.info("New checkpoint")
