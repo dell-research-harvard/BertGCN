@@ -97,9 +97,11 @@ def train_step(engine, batch):
     y_pred = model(input_ids, attention_mask)
     y_true = label.type(th.long)
 
-    # if nb_class == 2:
-    loss = F.binary_cross_entropy(y_pred, y_true)
-    # loss = F.cross_entropy(y_pred, y_true)
+    if model.nb_class == 1:
+        loss = F.binary_cross_entropy(y_pred, y_true)
+        print("Used")
+    else:
+        loss = F.cross_entropy(y_pred, y_true)
 
     loss.backward()
 
@@ -143,13 +145,14 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs, nb_class):
 
     evaluator = Engine(test_step)
 
-    if nb_class == 2:
+    if nb_class == 1:
         metrics = {
             'acc': Accuracy(),
             'prec': Precision(average=False),
             'rec': Recall(average=False),
             'nll': Loss(th.nn.BCELoss())
         }
+    else:
         metrics = {
             'acc': Accuracy(),
             'prec': Precision(average=False),
@@ -208,18 +211,18 @@ if __name__ == '__main__':
 
     _, _, _, _, _, _, _, text, count_dict, label_dict = load_corpus(dataset)
 
-    # if count_dict['classes'] == 2:
-    #     print("Binary classification")
-    #     nb_class = 1
-    # else:
-    #     print("Multiclass classification")
-    #     nb_class = count_dict['classes']
+    if count_dict['classes'] == 2:
+        print("Binary classification")
+        nb_class = 1
+    else:
+        print("Multiclass classification")
+        nb_class = count_dict['classes']
 
-    model = BertClassifier(pretrained_model=bert_init, nb_class=count_dict['classes'])
+    model = BertClassifier(pretrained_model=bert_init, nb_class=nb_class)
 
     optimizer = th.optim.Adam(model.parameters(), lr=bert_lr)
     scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[30], gamma=0.1)
 
     data_loader = tokenize_data(text, count_dict, label_dict, model, max_length)
 
-    train(data_loader, model, bert_lr, ckpt_dir, nb_epochs, count_dict['classes'])
+    train(data_loader, model, bert_lr, ckpt_dir, nb_epochs, nb_class)
