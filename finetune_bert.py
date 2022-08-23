@@ -98,6 +98,8 @@ def train_step(engine, batch):
     y_true = label.type(th.long)
 
     if model.nb_class == 1:
+        print(type(y_pred))
+        print(type(y_true))
         loss = F.binary_cross_entropy(y_pred, y_true)
         print("Used")
     else:
