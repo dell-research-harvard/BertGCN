@@ -97,11 +97,9 @@ def train_step(engine, batch):
     y_pred = model(input_ids, attention_mask)
     y_true = label.type(th.long)
 
-    if nb_class == 2:
-        loss = F.binary_cross_entropy(y_pred, y_true)
-        print("Used")
-    else:
-        loss = F.cross_entropy(y_pred, y_true)
+    # if nb_class == 2:
+    loss = F.binary_cross_entropy(y_pred, y_true)
+    # loss = F.cross_entropy(y_pred, y_true)
 
     loss.backward()
 
@@ -152,7 +150,6 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs, nb_class):
             'rec': Recall(average=False),
             'nll': Loss(th.nn.BCELoss())
         }
-    else:
         metrics = {
             'acc': Accuracy(),
             'prec': Precision(average=False),
