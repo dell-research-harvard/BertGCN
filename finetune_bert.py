@@ -97,7 +97,12 @@ def train_step(engine, batch):
     y_pred = model(input_ids, attention_mask)
     y_true = label.type(th.long)
 
-    loss = F.cross_entropy(y_pred, y_true)
+    if nb_class == 1:
+        loss = F.binary_cross_entropy(y_pred, y_true)
+        print("Used")
+    else:
+        loss = F.cross_entropy(y_pred, y_true)
+
     loss.backward()
 
     optimizer.step()
@@ -131,7 +136,7 @@ def test_step(engine, batch):
         return y_pred, y_true
 
 
-def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs):
+def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs, nb_class):
 
     print("\n Training ...")
 
@@ -140,12 +145,20 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs):
 
     evaluator = Engine(test_step)
 
-    metrics = {
-        'acc': Accuracy(),
-        'prec': Precision(average=False),
-        'rec': Recall(average=False),
-        'nll': Loss(th.nn.CrossEntropyLoss())
-    }
+    if nb_class == 1:
+        metrics = {
+            'acc': Accuracy(),
+            'prec': Precision(average=False),
+            'rec': Recall(average=False),
+            'nll': Loss(th.nn.BCELoss())
+        }
+    else:
+        metrics = {
+            'acc': Accuracy(),
+            'prec': Precision(average=False),
+            'rec': Recall(average=False),
+            'nll': Loss(th.nn.CrossEntropyLoss())
+        }
 
     for n, f in metrics.items():
         f.attach(evaluator, n)
@@ -198,10 +211,18 @@ if __name__ == '__main__':
 
     _, _, _, _, _, _, _, text, count_dict, label_dict = load_corpus(dataset)
 
-    model = BertClassifier(pretrained_model=bert_init, nb_class=count_dict['classes'])
+    if count_dict['classes'] == 2:
+        print("Binary classification")
+        nb_class = 1
+    else:
+        print("Multiclass classification")
+        nb_class = count_dict['classes']
+
+    model = BertClassifier(pretrained_model=bert_init, nb_class=nb_class)
+
     optimizer = th.optim.Adam(model.parameters(), lr=bert_lr)
     scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[30], gamma=0.1)
 
     data_loader = tokenize_data(text, count_dict, label_dict, model, max_length)
 
-    train(data_loader, model, bert_lr, ckpt_dir, nb_epochs)
+    train(data_loader, model, bert_lr, ckpt_dir, nb_epochs, nb_class)
