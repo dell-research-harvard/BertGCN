@@ -142,8 +142,8 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs):
 
     metrics = {
         'acc': Accuracy(),
-        'prec': Precision(),
-        'rec': Recall(),
+        'prec': Precision(average=False),
+        'rec': Recall(average=False),
         'nll': Loss(th.nn.CrossEntropyLoss())
     }
 
@@ -154,16 +154,16 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs):
     def log_training_results(trainer):
         evaluator.run(data_loader['train'])
         metrics = evaluator.state.metrics
-        train_acc, train_prec, train_rec, train_nll = metrics["acc"], metrics["prec"][0], metrics["rec"][0], metrics["nll"]
-        train_f1 = (train_prec * train_rec * 2 / (train_prec + train_rec))
+        train_acc, train_prec, train_rec, train_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["nll"]
+        train_f1 = (train_prec * train_rec * 2 / (train_prec + train_rec)).mean()
         evaluator.run(data_loader['val'])
         metrics = evaluator.state.metrics
-        val_acc, val_prec, val_rec, val_nll = metrics["acc"], metrics["prec"][0], metrics["rec"][0], metrics["nll"]
-        val_f1 = (val_prec * val_rec * 2 / (val_prec + val_rec))
+        val_acc, val_prec, val_rec, val_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["nll"]
+        val_f1 = (val_prec * val_rec * 2 / (val_prec + val_rec)).mean()
         evaluator.run(data_loader['test'])
         metrics = evaluator.state.metrics
-        test_acc, test_prec, test_rec, test_nll = metrics["acc"], metrics["prec"][0], metrics["rec"][0], metrics["nll"]
-        test_f1 = (test_prec * test_rec * 2 / (test_prec + test_rec))
+        test_acc, test_prec, test_rec, test_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["nll"]
+        test_f1 = (test_prec * test_rec * 2 / (test_prec + test_rec)).mean()
         logger.info("\rEpoch: {}".format(trainer.state.epoch))
         logger.info(" TRAIN acc: {:.4f} prec: {} rec: {} f1:{} loss: {:.4f}".format(train_acc, train_prec, train_rec, train_f1, train_nll))
         logger.info(" VAL acc: {:.4f} prec: {} rec: {} f1:{} loss: {:.4f}".format(val_acc, val_prec, val_rec, val_f1, val_nll))
