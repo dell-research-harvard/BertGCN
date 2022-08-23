@@ -96,6 +96,8 @@ def train_step(engine, batch):
 
     y_pred = model(input_ids, attention_mask)
 
+    print(y_pred)
+
     if model.nb_class == 1:
         y_true = label.type(th.float32)
         loss = F.binary_cross_entropy(y_pred, y_true)
