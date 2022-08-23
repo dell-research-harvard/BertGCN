@@ -95,14 +95,12 @@ def train_step(engine, batch):
     optimizer.zero_grad()
 
     y_pred = model(input_ids, attention_mask)
-    y_true = label.type(th.long)
 
     if model.nb_class == 1:
-        print(type(y_pred))
-        print(type(y_true))
+        y_true = label.type(th.float32)
         loss = F.binary_cross_entropy(y_pred, y_true)
-        print("Used")
     else:
+        y_true = label.type(th.long)
         loss = F.cross_entropy(y_pred, y_true)
 
     loss.backward()
