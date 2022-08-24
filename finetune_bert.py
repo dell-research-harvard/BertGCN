@@ -117,7 +117,7 @@ def train_step(engine, batch):
 
         if model.nb_class == 1:
 
-            y_pred = y_pred > 0.5
+            y_pred = (y_pred > 0.5).int()
 
             print(y_pred)
 
