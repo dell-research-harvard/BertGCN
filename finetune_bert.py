@@ -1,7 +1,7 @@
 import argparse
 import shutil
 
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score
 
 import torch.nn.functional as F
 from torch.optim import lr_scheduler
@@ -116,8 +116,10 @@ def train_step(engine, batch):
         y_true = y_true.detach().cpu()
         y_pred = y_pred.argmax(axis=1).detach().cpu()
         train_acc = accuracy_score(y_true, y_pred)
+        train_prec = precision_score(y_true, y_pred)
+        train_rec = recall_score(y_true, y_pred)
 
-    return train_loss, train_acc
+    return train_loss, train_acc, train_prec, train_rec
 
 
 def test_step(engine, batch):
@@ -155,7 +157,7 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs, nb_class):
 
     evaluator = Engine(test_step)
 
-    if nb_class == 1:
+    if nb_class == 2:
         metrics = {
             'acc': Accuracy(),
             'prec': Precision(average=False),
