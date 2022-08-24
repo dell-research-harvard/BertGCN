@@ -146,7 +146,8 @@ def test_step(engine, batch):
 
         if model.nb_class == 1:
             y_pred = th.sigmoid(y_pred)
-            y_pred = (y_pred > 0.5).int()
+            y_pred = th.squeeze(y_pred)
+            y_pred = (y_pred > 0.5).int().type(th.long)
 
         print(y_pred)
 
