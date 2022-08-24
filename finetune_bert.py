@@ -96,9 +96,12 @@ def train_step(engine, batch):
 
     y_pred = model(input_ids, attention_mask)
 
+    print(y_pred)
+    print(y_pred.shape)
+
     if model.nb_class == 1:
         y_true = label.type(th.float32)
-        y_pred = th.sigmoid(y_pred)
+        # y_pred = th.sigmoid(y_pred) #Todo: check this is okay
         y_pred = th.squeeze(y_pred)
 
         loss = F.binary_cross_entropy(y_pred, y_true)
