@@ -13,6 +13,12 @@ from utils import *
 from model import BertClassifier
 
 
+def f1(prec, rec):
+    if prec + rec > 0:
+        return (prec * rec * 2)/(prec + rec)
+    else:
+        return 0
+
 def load_parameters():
 
     # Parameters
@@ -122,8 +128,8 @@ def train_step(engine, batch):
             y_pred = y_pred.argmax(axis=1).detach().cpu()
 
         train_acc = accuracy_score(y_true, y_pred)
-        train_prec = precision_score(y_true, y_pred)
-        train_rec = recall_score(y_true, y_pred)
+        train_prec = precision_score(y_true, y_pred, zero_division=0)
+        train_rec = recall_score(y_true, y_pred, zero_division=0)
 
     return train_loss, train_acc, train_prec, train_rec
 
@@ -184,18 +190,22 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs, nb_class):
 
     @trainer.on(Events.EPOCH_COMPLETED)
     def log_training_results(trainer):
+
         evaluator.run(data_loader['train'])
         metrics = evaluator.state.metrics
         train_acc, train_prec, train_rec, train_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["nll"]
-        train_f1 = (train_prec * train_rec * 2 / (train_prec + train_rec)).mean()
+        train_f1 = f1(train_prec, train_rec)
+
         evaluator.run(data_loader['val'])
         metrics = evaluator.state.metrics
         val_acc, val_prec, val_rec, val_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["nll"]
-        val_f1 = (val_prec * val_rec * 2 / (val_prec + val_rec)).mean()
+        val_f1 = f1(val_prec, val_rec)
+
         evaluator.run(data_loader['test'])
         metrics = evaluator.state.metrics
         test_acc, test_prec, test_rec, test_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["nll"]
-        test_f1 = (test_prec * test_rec * 2 / (test_prec + test_rec)).mean()
+        test_f1 = f1(test_prec, test_rec)
+
         logger.info("\rEpoch: {}".format(trainer.state.epoch))
         logger.info(" TRAIN acc: {:.4f} prec: {} rec: {} f1:{} loss: {:.4f}".format(train_acc, train_prec, train_rec, train_f1, train_nll))
         logger.info(" VAL acc: {:.4f} prec: {} rec: {} f1:{} loss: {:.4f}".format(val_acc, val_prec, val_rec, val_f1, val_nll))
