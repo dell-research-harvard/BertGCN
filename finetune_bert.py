@@ -143,12 +143,14 @@ def test_step(engine, batch):
 
         y_pred = model(input_ids, attention_mask)
 
-        # if model.nb_class == 1:
-        #     y_pred = th.sigmoid(y_pred)
-        #     y_pred = th.squeeze(y_pred)
-        #     y_pred = (y_pred > 0.5).type(th.float32)
+        if model.nb_class == 1:
+            y_pred = th.sigmoid(y_pred)
+            y_pred = th.squeeze(y_pred)
+            y_pred = (y_pred > 0.5).type(th.float32)
+            y_true = label.type(th.float32)
 
-        y_true = label
+        else:
+            y_true = label
 
         return y_pred, y_true
 
