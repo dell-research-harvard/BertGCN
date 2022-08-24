@@ -96,12 +96,9 @@ def train_step(engine, batch):
 
     y_pred = model(input_ids, attention_mask)
 
-    print(y_pred)
-    print(y_pred.shape)
-
     if model.nb_class == 1:
         y_true = label.type(th.float32)
-        # y_pred = th.sigmoid(y_pred) #Todo: check this is okay
+        y_pred = th.sigmoid(y_pred)
         y_pred = th.squeeze(y_pred)
 
         loss = F.binary_cross_entropy(y_pred, y_true)
@@ -119,13 +116,14 @@ def train_step(engine, batch):
         y_true = y_true.detach().cpu()
 
         if model.nb_class == 1:
+
+            y_pred = y_pred > 0.5
+
+            print(y_pred)
+
             y_pred = y_pred.detach().cpu()
         else:
             y_pred = y_pred.argmax(axis=1).detach().cpu()
-
-        print(y_true)
-        print("******")
-        print(y_pred)
 
         train_acc = accuracy_score(y_true, y_pred)
         train_prec = precision_score(y_true, y_pred)
