@@ -141,7 +141,7 @@ def test_step(engine, batch):
         y_pred = model(input_ids, attention_mask)
         print(y_pred)
 
-        if model.nb_class == 2:
+        if model.nb_class == 1:
             y_pred = th.sigmoid(y_pred)
 
         print(y_pred)
@@ -160,7 +160,7 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs, nb_class):
 
     evaluator = Engine(test_step)
 
-    if nb_class == 2:
+    if nb_class == 1:
         metrics = {
             'acc': Accuracy(),
             'prec': Precision(average=False),
