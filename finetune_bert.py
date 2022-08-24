@@ -115,11 +115,14 @@ def train_step(engine, batch):
     with th.no_grad():
         y_true = y_true.detach().cpu()
 
-
         if model.nb_class == 1:
             y_pred = y_pred.detach().cpu()
         else:
             y_pred = y_pred.argmax(axis=1).detach().cpu()
+
+        print(y_true)
+        print("******")
+        print(y_pred)
 
         train_acc = accuracy_score(y_true, y_pred)
         train_prec = precision_score(y_true, y_pred)
