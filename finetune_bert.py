@@ -142,14 +142,11 @@ def test_step(engine, batch):
         optimizer.zero_grad()
 
         y_pred = model(input_ids, attention_mask)
-        print(y_pred)
 
         if model.nb_class == 1:
             y_pred = th.sigmoid(y_pred)
             y_pred = th.squeeze(y_pred)
-            y_pred = (y_pred > 0.5).int().type(th.long)
-
-        print(y_pred)
+            y_pred = (y_pred > 0.5).type(th.float32)
 
         y_true = label
 
