@@ -207,9 +207,9 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs, nb_class):
         test_acc, test_prec, test_rec, test_f1, test_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["f1"], metrics["nll"]
 
         logger.info("\rEpoch: {}".format(trainer.state.epoch))
-        logger.info(" TRAIN acc: {:.4f} prec: {:.4f} rec: {:.4f} f1:{:.4f} loss: {:.4f} "
-                    "VAL acc: {:.4f} prec: {:.4f} rec: {:.4f} f1:{:.4f} loss: {:.4f} "
-                    "TEST acc: {:.4f} prec: {:.4f} rec: {:.4f} f1:{:.4f} loss: {:.4f}"
+        logger.info(" TRAIN acc: {:.3f} prec: {:.3f} rec: {:.3f} f1:{:.3f} loss: {:.3f} "
+                    "VAL acc: {:.3f} prec: {:.3f} rec: {:.3f} f1:{:.3f} loss: {:.3f} "
+                    "TEST acc: {:.3f} prec: {:.3f} rec: {:.3f} f1:{:.3f} loss: {:.3f}"
                     .format(train_acc, train_prec, train_rec, train_f1, train_nll,
                             val_acc, val_prec, val_rec, val_f1, val_nll,
                             test_acc, test_prec, test_rec, test_f1, test_nll))
