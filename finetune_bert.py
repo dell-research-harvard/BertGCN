@@ -1,13 +1,13 @@
 import argparse
 import shutil
 
-from sklearn.metrics import accuracy_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 import torch.nn.functional as F
 from torch.optim import lr_scheduler
 
 from ignite.engine import Events, create_supervised_evaluator, create_supervised_trainer, Engine
-from ignite.metrics import Accuracy, Precision, Recall, Loss
+from ignite.metrics import Accuracy, Precision, Recall, Fbeta, Loss
 
 from utils import *
 from model import BertClassifier
@@ -130,8 +130,9 @@ def train_step(engine, batch):
         train_acc = accuracy_score(y_true, y_pred)
         train_prec = precision_score(y_true, y_pred, zero_division=0)
         train_rec = recall_score(y_true, y_pred, zero_division=0)
+        train_f1 = f1_score(y_true, y_pred, zero_division=0)
 
-    return train_loss, train_acc, train_prec, train_rec
+    return train_loss, train_acc, train_prec, train_rec, train_f1
 
 
 def test_step(engine, batch):
@@ -173,15 +174,17 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs, nb_class):
     if nb_class == 1:
         metrics = {
             'acc': Accuracy(),
-            'prec': Precision(average=False),
-            'rec': Recall(average=False),
+            'prec': Precision(average=True),
+            'rec': Recall(average=True),
+            'f1': Fbeta(beta=1),
             'nll': Loss(th.nn.BCELoss())
         }
     else:
         metrics = {
             'acc': Accuracy(),
-            'prec': Precision(average=False),
-            'rec': Recall(average=False),
+            'prec': Precision(average=True),
+            'rec': Recall(average=True),
+            'f1': Fbeta(beta=1),
             'nll': Loss(th.nn.CrossEntropyLoss())
         }
 
@@ -193,18 +196,15 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs, nb_class):
 
         evaluator.run(data_loader['train'])
         metrics = evaluator.state.metrics
-        train_acc, train_prec, train_rec, train_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["nll"]
-        train_f1 = f1(train_prec, train_rec)
+        train_acc, train_prec, train_rec, train_f1, train_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["f1"], metrics["nll"]
 
         evaluator.run(data_loader['val'])
         metrics = evaluator.state.metrics
-        val_acc, val_prec, val_rec, val_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["nll"]
-        val_f1 = f1(val_prec, val_rec)
+        val_acc, val_prec, val_rec, val_f1, val_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["f1"], metrics["nll"]
 
         evaluator.run(data_loader['test'])
         metrics = evaluator.state.metrics
-        test_acc, test_prec, test_rec, test_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["nll"]
-        test_f1 = f1(test_prec, test_rec)
+        test_acc, test_prec, test_rec, test_f1, test_nll = metrics["acc"], metrics["prec"], metrics["rec"], metrics["f1"], metrics["nll"]
 
         logger.info("\rEpoch: {}".format(trainer.state.epoch))
         logger.info(" TRAIN acc: {:.4f} prec: {:.4f} rec: {:.4f} f1:{:.4f} loss: {:.4f} "
