@@ -207,9 +207,12 @@ def train(data_loader, model, bert_lr, ckpt_dir, nb_epochs, nb_class):
         test_f1 = f1(test_prec, test_rec)
 
         logger.info("\rEpoch: {}".format(trainer.state.epoch))
-        logger.info(" TRAIN acc: {:.4f} prec: {} rec: {} f1:{} loss: {:.4f}".format(train_acc, train_prec, train_rec, train_f1, train_nll))
-        logger.info(" VAL acc: {:.4f} prec: {} rec: {} f1:{} loss: {:.4f}".format(val_acc, val_prec, val_rec, val_f1, val_nll))
-        logger.info(" TEST acc: {:.4f} prec: {} rec: {} f1:{} loss: {:.4f}".format(test_acc, test_prec, test_rec, test_f1, test_nll))
+        logger.info(" TRAIN acc: {:.4f} prec: {:.4f} rec: {:.4f} f1:{:.4f} loss: {:.4f} "
+                    "VAL acc: {:.4f} prec: {:.4f} rec: {:.4f} f1:{:.4f} loss: {:.4f} "
+                    "TEST acc: {:.4f} prec: {:.4f} rec: {:.4f} f1:{:.4f} loss: {:.4f}"
+                    .format(train_acc, train_prec, train_rec, train_f1, train_nll,
+                            val_acc, val_prec, val_rec, val_f1, val_nll,
+                            test_acc, test_prec, test_rec, test_f1, test_nll))
 
         if val_f1 > log_training_results.best_val_f1:
             logger.info("New checkpoint")
