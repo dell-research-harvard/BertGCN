@@ -243,12 +243,12 @@ if __name__ == '__main__':
 
     _, _, _, _, _, _, _, text, count_dict, label_dict = load_corpus(dataset)
 
-    if count_dict['classes'] == 2:
-        print("Binary classification")
-        nb_class = 1
-    else:
-        print("Multiclass classification")
-        nb_class = count_dict['classes']
+    # # if count_dict['classes'] == 2:
+    # #     print("Binary classification")
+    # #     nb_class = 1
+    # else:
+    print("Multiclass classification")
+    nb_class = count_dict['classes']
 
     model = BertClassifier(pretrained_model=bert_init, nb_class=nb_class)
 
