@@ -77,7 +77,7 @@ def load_corpus(dataset_str, batch_size=None):
     labels, adj = tuple(objects)
 
     # load documents
-    corpus_file = './data/corpus/'+dataset_str+'_shuffle.txt'
+    corpus_file = './data/corpus/'+dataset_str+'_shuffle_orig.txt'
     with open(corpus_file, 'r') as f:
         text = f.read()
         text = text.replace('\\', '')
